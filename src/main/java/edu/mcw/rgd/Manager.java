@@ -214,10 +214,11 @@ public class Manager {
                 tissueOntId = tissueOntId.replace("_",":");
 
                 String part = cols[headerIndex.get("Sample Characteristic[organism part]")];
-                /*if(part.equalsIgnoreCase("forebrain") || part.equalsIgnoreCase("hindbrain"))
-                    part = "brain";
-                */
                 String exprName = part + " molecular composition trait";
+                if(part.equalsIgnoreCase("forebrain") || part.equalsIgnoreCase("hindbrain"))
+                    exprName = "brain molecular composition trait";
+
+
                 String traitId = null;
                 traitId = dao.getTermByTermName(exprName,"VT");
                 if(traitId == null)
@@ -290,19 +291,17 @@ public class Manager {
                 geneExpressionRecords.put(geneExprRecId,geneExpressionRecord);
                 String cmoId = "";
 
-                if(part.equalsIgnoreCase("forebrain") || part.equalsIgnoreCase("hindbrain"))
-                        part = "brain";
-                else if(part.equalsIgnoreCase("skeletal muscle tissue"))
-                    part = "skeletal muscle";
                 String term = part + " ribonucleic acid composition measurement";
-
-                if(part.equalsIgnoreCase("gastrocnemius") || part.equalsIgnoreCase("skeletal muscle tissue"))
+                if(part.equalsIgnoreCase("forebrain") || part.equalsIgnoreCase("hindbrain"))
+                    cmoId = dao.getTermByTermName("brain ribonucleic acid composition measurement","CMO");
+                else if (part.equalsIgnoreCase("gastrocnemius") || part.equalsIgnoreCase("skeletal muscle tissue"))
                     cmoId = dao.getTermByTermName("muscle ribonucleic acid composition measurement","CMO");
                 else if(part.equalsIgnoreCase("colon"))
                     cmoId = "CMO:0000329";
                 else if(part.equalsIgnoreCase("ovary"))
                     cmoId = "CMO:0000404";
-                else cmoId = dao.getTermByTermName(term,"CMO");
+                else
+                    cmoId = dao.getTermByTermName(term,"CMO");
 
                 cmoIDs.put(header,cmoId);
             }
