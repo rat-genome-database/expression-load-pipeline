@@ -187,8 +187,8 @@ public class Manager {
                         ageLow = ageHigh;
                     }else if(age.contains("day")) {
                         if(cols[headerIndex.get("Sample Characteristic[developmental stage]")].equalsIgnoreCase("embryo")) {
-                            ageHigh = Integer.valueOf(age.split("day")[0].trim()) - 23;
-                            ageLow = ageHigh + 2;
+                            ageLow = Integer.valueOf(age.split("day")[0].trim()) - 23;
+                            ageHigh = ageLow + 2;
                         } else if(cols[headerIndex.get("Sample Characteristic[developmental stage]")].equalsIgnoreCase("postnatal")) {
                             ageHigh = Integer.valueOf(age.split("day")[0].trim());
                             ageLow = ageHigh;
@@ -217,7 +217,9 @@ public class Manager {
                 String exprName = part + " molecular composition trait";
                 if(part.equalsIgnoreCase("forebrain") || part.equalsIgnoreCase("hindbrain"))
                     exprName = "brain molecular composition trait";
-
+                else if(part.equalsIgnoreCase("skeletal muscle tissue")){
+                    exprName = "muscle molecular composition trait";
+                }
 
                 String traitId = null;
                 traitId = dao.getTermByTermName(exprName,"VT");
@@ -225,10 +227,7 @@ public class Manager {
                 {   exprName = part + " morphology trait";
                     traitId = dao.getTermByTermName(exprName,"VT");
                 }
-                if(part.equalsIgnoreCase("skeletal muscle tissue")){
-                    exprName = "muscle molecular composition trait";
-                    traitId = dao.getTermByTermName(exprName,"VT");
-                }
+
 
                 experiment.setStudyId(getStudyId());
                 experiment.setName(exprName);
@@ -294,12 +293,8 @@ public class Manager {
                 String term = part + " ribonucleic acid composition measurement";
                 if(part.equalsIgnoreCase("forebrain") || part.equalsIgnoreCase("hindbrain"))
                     cmoId = dao.getTermByTermName("brain ribonucleic acid composition measurement","CMO");
-                else if (part.equalsIgnoreCase("gastrocnemius") || part.equalsIgnoreCase("skeletal muscle tissue"))
-                    cmoId = dao.getTermByTermName("muscle ribonucleic acid composition measurement","CMO");
-                else if(part.equalsIgnoreCase("colon"))
-                    cmoId = "CMO:0000329";
-                else if(part.equalsIgnoreCase("ovary"))
-                    cmoId = "CMO:0000404";
+                else if (part.equalsIgnoreCase("skeletal muscle tissue"))
+                    cmoId = dao.getTermByTermName("skeletal muscle ribonucleic acid composition measurement","CMO");
                 else
                     cmoId = dao.getTermByTermName(term,"CMO");
 
