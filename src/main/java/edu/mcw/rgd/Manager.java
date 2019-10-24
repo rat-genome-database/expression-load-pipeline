@@ -187,8 +187,8 @@ public class Manager {
                         ageLow = ageHigh;
                     }else if(age.contains("day")) {
                         if(cols[headerIndex.get("Sample Characteristic[developmental stage]")].equalsIgnoreCase("embryo")) {
-                            ageHigh = Integer.valueOf(age.split("day")[0].trim()) - 23;
-                            ageLow = ageHigh + 2;
+                            ageLow = Integer.valueOf(age.split("day")[0].trim()) - 23;
+                            ageHigh = ageLow + 2;
                         } else if(cols[headerIndex.get("Sample Characteristic[developmental stage]")].equalsIgnoreCase("postnatal")) {
                             ageHigh = Integer.valueOf(age.split("day")[0].trim());
                             ageLow = ageHigh;
