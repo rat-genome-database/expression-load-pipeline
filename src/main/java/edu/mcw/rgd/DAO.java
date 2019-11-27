@@ -10,6 +10,7 @@ import edu.mcw.rgd.datamodel.pheno.Experiment;
 import edu.mcw.rgd.datamodel.pheno.GeneExpressionRecord;
 import edu.mcw.rgd.datamodel.pheno.GeneExpressionRecordValue;
 import edu.mcw.rgd.datamodel.pheno.Sample;
+import edu.mcw.rgd.process.Utils;
 import edu.mcw.rgd.process.mapping.MapManager;
 
 import java.util.List;
@@ -34,20 +35,58 @@ public class DAO extends AbstractDAO {
     }
 
 
-    public int getSampleId(Sample sample) throws Exception{
+    public Sample getSample(Sample sample) throws Exception{
+        String sql = "Select * from Sample where number_of_animals = "+sample.getNumberOfAnimals()+" and tissue_ont_id = '"+sample.getTissueAccId()+ "' and strain_ont_id";
+        if(sample.getStrainAccId() != null)
+         sql += "= '"+sample.getStrainAccId()+"'";
+        else sql += " is null";
 
-        String sql = "Select * from Sample where age_days_from_dob_high_bound = "+sample.getAgeDaysFromHighBound()+ " and age_days_from_dob_low_bound = "+sample.getAgeDaysFromLowBound()+ " and" +
-                " number_of_animals = "+sample.getNumberOfAnimals()+" and sex='" + sample.getSex()+"' and strain_ont_id = '"+sample.getStrainAccId()+"' and tissue_ont_id = '"+sample.getTissueAccId()+"'";
+        if(sample.getSex() != null)
+           sql += " and sex='" + sample.getSex() + "'";
+        else sql += " and sex is null";
+
+        if(sample.getAgeDaysFromHighBound() != null)
+            sql += " and age_days_from_dob_high_bound = "+sample.getAgeDaysFromHighBound();
+        else sql += " and age_days_from_dob_high_bound is null";
+
+        if(sample.getAgeDaysFromLowBound() != null)
+            sql += " and age_days_from_dob_low_bound = "+sample.getAgeDaysFromLowBound();
+        else sql += " and age_days_from_dob_high_bound is null";
+
+System.out.println(sql);
         SampleQuery sq = new SampleQuery(this.getDataSource(), sql);
         List<Sample> samples = sq.execute();
         if(samples == null || samples.isEmpty())
-            return 0;
-        else return samples.get(0).getId();
+            return null;
+        else return samples.get(0);
     }
+    public Sample getSampleFromBioSampleId(Sample sample) throws Exception{
+        String sql = "Select * from Sample where strain_ont_id is null and biosample_id like '%"+sample.getBioSampleId()+"%'";
 
+
+        System.out.println(sql);
+        SampleQuery sq = new SampleQuery(this.getDataSource(), sql);
+        List<Sample> samples = sq.execute();
+        if(samples == null || samples.isEmpty())
+            return null;
+        else return samples.get(0);
+    }
+    public void updateBioSampleId(int sampleId,Sample sample) throws Exception{
+
+        Sample s = getSample(sample);
+        String sql = "update Sample set biosample_id = '" +s.getBioSampleId() + ";" + sample.getBioSampleId()+ "' where sample_id = "+sampleId;
+        this.update(sql);
+
+    }
     public int getExperimentId(Experiment e) throws Exception{
 
-        String sql = "Select * from Experiment where experiment_name='"+e.getName()+"' and study_id="+e.getStudyId()+" and trait_ont_id='"+e.getTraitOntId()+"'";
+        String sql = "Select * from Experiment where experiment_name='"+e.getName()+"' and study_id="+e.getStudyId();
+
+        if(e.getTraitOntId() != null)
+            sql += " and trait_ont_id='"+e.getTraitOntId()+"'";
+        else sql += " and trait_ont_id is null";
+
+
         ExperimentQuery sq = new ExperimentQuery(this.getDataSource(), sql);
         List<Experiment> experiments = sq.execute();
         if(experiments == null || experiments.isEmpty())
@@ -103,5 +142,16 @@ public class DAO extends AbstractDAO {
         if(rgdIds == null || rgdIds.isEmpty())
             return 0;
         else return rgdIds.get(0).getRgdId();
+    }
+
+    public void updateExpressionLevel() throws Exception{
+        String sql = "update gene_expression_values set expression_level= 'below cutoff' where expression_level is null and expression_value < 0.5";
+        this.update(sql);
+        sql = "update gene_expression_values set expression_level= 'low' where expression_level is null and expression_value between 0.5 and 10";
+        this.update(sql);
+        sql = "update gene_expression_values set expression_level= 'medium' where expression_level is null and expression_value between 11 and 1000";
+        this.update(sql);
+        sql = "update gene_expression_values set expression_level= 'high' where expression_level is null and expression_value > 1000";
+        this.update(sql);
     }
 }

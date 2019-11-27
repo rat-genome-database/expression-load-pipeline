@@ -11,6 +11,7 @@ import edu.mcw.rgd.datamodel.pheno.Experiment;
 import edu.mcw.rgd.datamodel.pheno.GeneExpressionRecord;
 import edu.mcw.rgd.datamodel.pheno.GeneExpressionRecordValue;
 import edu.mcw.rgd.datamodel.pheno.Sample;
+import edu.mcw.rgd.process.mapping.MapManager;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.beans.factory.xml.XmlBeanDefinitionReader;
@@ -43,6 +44,7 @@ public class Manager {
     private int mapKey;
     private String tpmFile;
     private String designFile;
+    private boolean firstRun;
 
     private Map headerFormat;
     private List<String> headerVal;
@@ -156,8 +158,6 @@ public class Manager {
         BufferedReader reader=new BufferedReader(fileReader);
 
 
-
-
         String line = null;
         Map<String,Integer> headerIndex = new HashMap<>();
         int experimentId = 0;
@@ -175,63 +175,45 @@ public class Manager {
                 Experiment experiment = new Experiment();
                 GeneExpressionRecord geneExpressionRecord = new GeneExpressionRecord();
                 String sex = null;
-                String age = null;
                 int ageHigh = 0;
                 int ageLow = 0;
-                if(headerIndex.containsKey("Sample Characteristic[sex]") && headerIndex.containsKey("Sample Characteristic[age]")) {
+                if(headerIndex.containsKey("Sample Characteristic[sex]") ) {
                     sex = cols[headerIndex.get("Sample Characteristic[sex]")];
-                    age = cols[headerIndex.get("Sample Characteristic[age]")];
-                    if(age.contains("week")) {
-                        ageHigh = Integer.valueOf(age.split("week")[0].trim());
-                        ageHigh = ageHigh*7;
-                        ageLow = ageHigh;
-                    }else if(age.contains("day")) {
-                        if(cols[headerIndex.get("Sample Characteristic[developmental stage]")].equalsIgnoreCase("embryo")) {
-                            ageLow = Integer.valueOf(age.split("day")[0].trim()) - 23;
-                            ageHigh = ageLow + 2;
-                        } else if(cols[headerIndex.get("Sample Characteristic[developmental stage]")].equalsIgnoreCase("postnatal")) {
-                            ageHigh = Integer.valueOf(age.split("day")[0].trim());
-                            ageLow = ageHigh;
-                        }
+                    sample.setSex(sex);
+                    if( headerIndex.containsKey("Sample Characteristic[age]") ) {
+                        ageHigh = getAgeHigh(cols,headerIndex);
+                        ageLow = getAgeLow(cols,headerIndex);
+                        sample.setAgeDaysFromHighBound(ageHigh);
+                        sample.setAgeDaysFromLowBound(ageLow);
+                    } else {
+                        sample.setAgeDaysFromHighBound(null);
+                        sample.setAgeDaysFromLowBound(null);
                     }
 
-                    sample.setAgeDaysFromHighBound(ageHigh);
-                    sample.setAgeDaysFromLowBound(ageLow);
-                    sample.setSex(sex);
-                } else {
+                }else {
                     sample.setAgeDaysFromHighBound(null);
                     sample.setAgeDaysFromLowBound(null);
                     sample.setSex("not specified");
                 }
 
+                //Strian doesnt exist for human it exists for rat
+                if(headerIndex.containsKey("Sample Characteristic[strain]")) {
+                    String strain = cols[headerIndex.get("Sample Characteristic[strain]")];
+                    String strainOntId = (String) (getStrainOntIds().get(strain));
+                    sample.setStrainAccId(strainOntId);
+                } else sample.setStrainAccId(null);
 
-
-                String strain = cols[headerIndex.get("Sample Characteristic[strain]")];
-                String strainOntId = (String)(getStrainOntIds().get(strain));
 
                 String tissue = cols[headerIndex.get("Sample Characteristic Ontology Term[organism part]")];
                 String tissueOntId = tissue.split("http://purl.obolibrary.org/obo/")[1];
                 tissueOntId = tissueOntId.replace("_",":");
 
                 String part = cols[headerIndex.get("Sample Characteristic[organism part]")];
-                String exprName = part + " molecular composition trait";
-                if(part.equalsIgnoreCase("forebrain") || part.equalsIgnoreCase("hindbrain"))
-                    exprName = "brain molecular composition trait";
-                else if(part.equalsIgnoreCase("skeletal muscle tissue")){
-                    exprName = "muscle molecular composition trait";
-                }
-
-                String traitId = null;
-                traitId = dao.getTermByTermName(exprName,"VT");
-                if(traitId == null)
-                {   exprName = part + " morphology trait";
-                    traitId = dao.getTermByTermName(exprName,"VT");
-                }
-
+                part = part.replace("'","");
 
                 experiment.setStudyId(getStudyId());
-                experiment.setName(exprName);
-                experiment.setTraitOntId(traitId);
+                experiment.setName(getExperimentName(part));
+                experiment.setTraitOntId(getTraitId(part,getExperimentName(part)));
                 experiments.add(experiment);
 
 
@@ -246,20 +228,33 @@ public class Manager {
                 experiment.setId(experimentId);
 
 
-
-
                 sample.setNumberOfAnimals(getNoOfRuns());
-                sample.setStrainAccId(strainOntId);
+
                 sample.setTissueAccId(tissueOntId);
+                sample.setBioSampleId(cols[headerIndex.get("Run")]);
                 samples.add(sample);
 
+                Sample s;
+                if(!headerVal.contains("Sample Characteristic[sex]") && noOfRuns == 0 && firstRun == true)
+                    sample.setSex(cols[headerIndex.get("Factor Value[disease]")]);
 
-                    sampleId = dao.getSampleId(sample);
-                    if(sampleId == 0) {
+                if(firstRun == false)
+                    s = dao.getSampleFromBioSampleId(sample);
+                else
+                     s = dao.getSample(sample);
+
+                    if(s == null) {
                         sampleId = dao.insertSample(sample);
                         System.out.println("Inserted Sample :" + sampleId);
+                    } else {
+                        sampleId = s.getId();
+                        if(!s.getBioSampleId().contains(sample.getBioSampleId()))
+                        {
+                            dao.updateBioSampleId(sampleId,sample);
+                            System.out.println("Updated Sample :" + sampleId);
+                        }
                     }
-                    log.info("Inserted Sample :" + sampleId);
+                   // log.info("Inserted Sample :" + sampleId);
 
 
                 sample.setId(sampleId);
@@ -275,7 +270,7 @@ public class Manager {
                     geneExpressionRecord.setSampleId(sample.getId());
                     geneExpressionRecord.setLastModifiedBy("hsnalabolu");
                     geneExpressionRecord.setCurationStatus(20);
-                    geneExpressionRecord.setSpeciesTypeKey(3);
+                    geneExpressionRecord.setSpeciesTypeKey(MapManager.getInstance().getMap(mapKey).getSpeciesTypeKey());
 
                     int geneExprRecId = dao.getGeneExprRecordId(geneExpressionRecord);
                     if(geneExprRecId == 0) {
@@ -288,15 +283,8 @@ public class Manager {
 
                 geneExpressionRecordMap.put(geneExprRecId,header);
                 geneExpressionRecords.put(geneExprRecId,geneExpressionRecord);
-                String cmoId = "";
 
-                String term = part + " ribonucleic acid composition measurement";
-                if(part.equalsIgnoreCase("forebrain") || part.equalsIgnoreCase("hindbrain"))
-                    cmoId = dao.getTermByTermName("brain ribonucleic acid composition measurement","CMO");
-                else if (part.equalsIgnoreCase("skeletal muscle tissue"))
-                    cmoId = dao.getTermByTermName("skeletal muscle ribonucleic acid composition measurement","CMO");
-                else
-                    cmoId = dao.getTermByTermName(term,"CMO");
+                String cmoId = getCMOId(part);
 
                 cmoIDs.put(header,cmoId);
             }
@@ -308,6 +296,241 @@ public class Manager {
         logSummary.info("Gene Expression Records Inserted : " + geneExpressionRecords.size());
         reader.close();
         loadTPMValues();
+        dao.updateExpressionLevel();
+    }
+
+    public int getAgeHigh(String[] cols, Map<String,Integer> headerIndex) {
+        String age = cols[headerIndex.get("Sample Characteristic[age]")];
+        int ageHigh = 0;
+        if(headerVal.contains("Sample Characteristic[developmental stage]")) {
+            String developage = cols[headerIndex.get("Sample Characteristic[developmental stage]")];
+            if(developage.contains("week post conception")) {
+                ageHigh = Integer.valueOf(age.split("week")[0].trim());
+                ageHigh = ageHigh * 7;
+                ageHigh = ageHigh - 280;
+            }else if(developage.contains("adolescent")) {
+                ageHigh = 17 * 365;
+            }else if(developage.contains("elderly")){
+                ageHigh = 58 * 365;
+            } else if(developage.contains("infant")) {
+                ageHigh = 271;
+            }else if(developage.contains("middle adult")){
+                ageHigh = 55 * 365;
+            }else if(developage.contains("neonate")){
+                ageHigh = 34;
+            }else if(developage.contains("school age child")){
+                ageHigh = 8 * 365;
+            }else if(developage.contains("toddler"))
+                ageHigh = 4 * 365;
+             else if(developage.contains("young adult"))
+                ageHigh = 39 * 365;
+            else if(developage.contains("adult"))
+                ageHigh = 92 * 365;
+            else if(developage.contains("fetal"))
+                ageHigh = 40 * 7;
+            return ageHigh;
+        }
+
+        if (age.contains("week")) {
+            ageHigh = Integer.valueOf(age.split("week")[0].trim());
+            ageHigh = ageHigh * 7;
+        }else if (age.contains("month")) {
+            ageHigh = Integer.valueOf(age.split("week")[0].trim());
+            ageHigh = ageHigh * 30;
+        }
+        else if (age.contains("day")) {
+            if (cols[headerIndex.get("Sample Characteristic[developmental stage]")].equalsIgnoreCase("embryo")) {
+                ageHigh = Integer.valueOf(age.split("day")[0].trim()) - 21;
+            } else if (cols[headerIndex.get("Sample Characteristic[developmental stage]")].equalsIgnoreCase("postnatal")) {
+                ageHigh = Integer.valueOf(age.split("day")[0].trim());
+            }
+        }
+        if (age.contains("year")) {
+            ageHigh = Integer.valueOf(age.split("year")[0].trim());
+            ageHigh = ageHigh * 365;
+        }
+        return ageHigh;
+    }
+    public int getAgeLow(String[] cols, Map<String,Integer> headerIndex) {
+        String age = cols[headerIndex.get("Sample Characteristic[age]")];
+        int ageLow = 0;
+        if(headerVal.contains("Sample Characteristic[developmental stage]")) {
+            String developage = cols[headerIndex.get("Sample Characteristic[developmental stage]")];
+            if(developage.contains("week post conception")) {
+                ageLow = Integer.valueOf(age.split("week")[0].trim());
+                ageLow = ageLow * 7;
+                ageLow = ageLow - 280;
+            }else if(developage.contains("adolescent")) {
+                ageLow = 13 * 365;
+            }else if(developage.contains("elderly")){
+                ageLow = 55 * 365;
+            } else if(developage.contains("infant")) {
+                ageLow = 127;
+            }else if(developage.contains("middle adult")){
+                ageLow = 46 * 365;
+            }else if(developage.contains("neonate")){
+                ageLow = 0;
+            }else if(developage.contains("school age child")){
+                ageLow = 7 * 365;
+            }else if(developage.contains("toddler"))
+                ageLow = 1 * 365;
+            else if(developage.contains("young adult"))
+                ageLow = 28 * 365;
+            else if(developage.contains("adult"))
+                ageLow = 14 * 365;
+            else if(developage.contains("fetal"))
+                ageLow = 16 * 7;
+            return ageLow;
+        }
+
+        if (age.contains("week")) {
+            ageLow = Integer.valueOf(age.split("week")[0].trim());
+            ageLow = ageLow * 7;
+        }else if (age.contains("month")) {
+            ageLow = Integer.valueOf(age.split("week")[0].trim());
+            ageLow = ageLow * 30;
+        }else if (age.contains("day")) {
+            if (cols[headerIndex.get("Sample Characteristic[developmental stage]")].equalsIgnoreCase("embryo")) {
+                ageLow = Integer.valueOf(age.split("day")[0].trim()) - 23;
+            } else if (cols[headerIndex.get("Sample Characteristic[developmental stage]")].equalsIgnoreCase("postnatal")) {
+                ageLow = Integer.valueOf(age.split("day")[0].trim());
+            }
+        }
+        if (age.contains("year")) {
+            ageLow = Integer.valueOf(age.split("year")[0].trim());
+            ageLow = ageLow * 365;
+        }
+        return ageLow;
+    }
+
+    public String getExperimentName(String part) throws Exception{
+
+        System.out.println(part);
+        String exprName = part + " molecular composition trait";
+        if(part.equalsIgnoreCase("forebrain") || part.equalsIgnoreCase("hindbrain") || part.equalsIgnoreCase("amygdala") || part.equalsIgnoreCase("brain meninx")
+           || part.equalsIgnoreCase("Brodmann (1909) area 24") || part.equalsIgnoreCase("Brodmann (1909) area 9") || part.equalsIgnoreCase("caudate nucleus") || part.equalsIgnoreCase("cerebellar hemisphere")
+           || part.equalsIgnoreCase("cerebral cortex") || part.equalsIgnoreCase("diencephalon") || part.equalsIgnoreCase("dorsal thalamus") || part.equalsIgnoreCase("globus pallidus")
+           || part.equalsIgnoreCase("hippocampal formation") || part.equalsIgnoreCase("hippocampus proper") || part.equalsIgnoreCase("hypothalamus") || part.equalsIgnoreCase("locus ceruleus")
+           || part.equalsIgnoreCase("medulla oblongata") || part.equalsIgnoreCase("middle frontal gyrus") || part.equalsIgnoreCase("middle temporal gyrus") || part.equalsIgnoreCase("nucleus accumbens")
+           || part.equalsIgnoreCase("occipital cortex") || part.equalsIgnoreCase("occipital lobe") || part.equalsIgnoreCase("parietal lobe") || part.equalsIgnoreCase("pineal body")
+           || part.equalsIgnoreCase("pituitary gland") || part.equalsIgnoreCase("putamen") || part.equalsIgnoreCase("substantia nigra") || part.equalsIgnoreCase("Brodmann area") )
+
+            exprName = "brain molecular composition trait";
+        else if(part.equalsIgnoreCase("skeletal muscle tissue") || part.equalsIgnoreCase("smooth muscle tissue") || part.equalsIgnoreCase("diaphragm") || part.equalsIgnoreCase("muscle of arm")
+                || part.equalsIgnoreCase("muscle of leg") || part.equalsIgnoreCase("skeletal muscle of trunk") || part.equalsIgnoreCase("skeletal muscle organ") ){
+            exprName = "muscle molecular composition trait";
+        }else if(part.equalsIgnoreCase("adipose tissue") || part.equalsIgnoreCase("subcutaneous adipose tissue")){
+            exprName = "adipose molecular composition trait";
+        }else if(part.equalsIgnoreCase("breast")) {
+            exprName = "mammary gland morphology trait";
+        }else if(part.equalsIgnoreCase("prostate gland")) {
+            exprName = "prostate morphology trait";
+        }else if(part.equalsIgnoreCase("sigmoid colon")) {
+            exprName = "colon morphology trait";
+        } else if (part.equalsIgnoreCase("frontal lobe") || part.equalsIgnoreCase("temporal lobe") || part.equalsIgnoreCase("prefrontal cortex") || part.equalsIgnoreCase("cerebellum")){
+            exprName = "cerebrum morphology trait";
+        } else if(part.equalsIgnoreCase("saliva-secreting gland")){
+            exprName = "salivary gland morphology trait";
+        }else if(part.equalsIgnoreCase("bone marrow")){
+            exprName = "bone marrow cell morphology trait";
+        }else if(part.equalsIgnoreCase("duodenum")){
+            exprName = "small intestine morphology trait";
+        }else if(part.equalsIgnoreCase("endometrium")){
+            exprName = "uterus ribonucleic acid amount";
+        }else if(part.equalsIgnoreCase("fallopian tube")){
+            exprName = "oviduct morphology trait";
+        }else if(part.equalsIgnoreCase("ectocervix") || part.equalsIgnoreCase("endocervix") || part.equalsIgnoreCase("uterine cervix") || part.equalsIgnoreCase("vagina")){
+            exprName = "female reproductive system morphology trait";
+        }else if(part.equalsIgnoreCase("epididymis") || part.equalsIgnoreCase("penis") || part.equalsIgnoreCase("seminal vesicle") || part.equalsIgnoreCase("vas deferens")){
+            exprName = "male reproductive system morphology trait";
+        }else if(part.equalsIgnoreCase("vermiform appendix") || part.equalsIgnoreCase("esophagogastric junction") || part.equalsIgnoreCase("large intestine")
+                || part.equalsIgnoreCase("transverse colon") || part.equalsIgnoreCase("esophagus mucosa") || part.equalsIgnoreCase("esophagus muscularis mucosa")
+                || part.equalsIgnoreCase("greater omentum") || part.equalsIgnoreCase("minor salivary gland") || part.equalsIgnoreCase("mouth mucosa")
+                || part.equalsIgnoreCase("parotid gland") || part.equalsIgnoreCase("submandibular gland")){
+            exprName = "gastrointestinal system morphology trait";
+        }else if(part.equalsIgnoreCase("zone of skin") || part.equalsIgnoreCase("transformed skin fibroblast") || part.equalsIgnoreCase("lower leg skin") || part.equalsIgnoreCase("suprapubic skin")){
+            exprName = "skin molecular composition trait";
+        }else if(part.equalsIgnoreCase("aorta") || part.equalsIgnoreCase("coronary artery") || part.equalsIgnoreCase("tibial artery")){
+            exprName = "artery molecular composition trait";
+        }else if(part.equalsIgnoreCase("cortex of kidney") || part.equalsIgnoreCase("left renal pelvis") || part.equalsIgnoreCase("renal pelvis") || part.equalsIgnoreCase("right renal pelvis")
+                || part.equalsIgnoreCase("right renal cortex") || part.equalsIgnoreCase("left renal cortex") ){
+            exprName = "kidney molecular composition trait";
+        }else if(part.equalsIgnoreCase("atrium auricular region") || part.equalsIgnoreCase("heart left ventricle") || part.equalsIgnoreCase("left cardiac atrium") || part.equalsIgnoreCase("mitral valve")
+                || part.equalsIgnoreCase("pulmonary valve") || part.equalsIgnoreCase("tricuspid valve") ){
+            exprName = "heart molecular composition trait";
+        }else if(part.equalsIgnoreCase("C1 segment of cervical spinal cord")){
+            exprName = "spinal cord molecular composition trait";
+        }else if(part.equalsIgnoreCase("blood")){
+            exprName = "hematopoietic system morphology trait";
+        }else if(part.equalsIgnoreCase("EBV-transformed lymphocyte")){
+            exprName = "lymphocyte morphology trait";
+        }else if(part.equalsIgnoreCase("dura mater")){
+            exprName = "meninges morphology trait";
+        }else if(part.equalsIgnoreCase("tibial nerve")){
+            exprName = "nervous system morphology trait";
+        }else if(part.equalsIgnoreCase("small intestine Peyers patch")){
+            exprName = "Peyers patch morphology trait";
+            return exprName;
+        }else if(part.equalsIgnoreCase("trachea") || part.equalsIgnoreCase("olfactory apparatus")){
+            exprName = "respiratory system morphology trait";
+        }else if(part.equalsIgnoreCase("throat")){
+            exprName = "pharynx morphology trait";
+        }
+
+        String traitId = dao.getTermByTermName(exprName,"VT");
+        if(traitId == null)
+             exprName = part + " morphology trait";
+
+            return exprName;
+    }
+    public String getTraitId(String part, String exprName) throws Exception{
+
+        String traitId = null;
+        if(exprName.equalsIgnoreCase("Peyers patch morphology trait")) {
+            traitId = "VT:0000696";
+            return traitId;
+        }
+        traitId = dao.getTermByTermName(exprName,"VT");
+        if(traitId == null)
+        {   exprName = part + " morphology trait";
+            traitId = dao.getTermByTermName(exprName,"VT");
+        }
+        return traitId;
+    }
+    public String getCMOId(String part) throws Exception{
+
+        String cmoId = "";
+        String term = part + " ribonucleic acid composition measurement";
+        if(part.equalsIgnoreCase("forebrain") || part.equalsIgnoreCase("hindbrain"))
+            cmoId = dao.getTermByTermName("brain ribonucleic acid composition measurement","CMO");
+        else if (part.equalsIgnoreCase("frontal lobe") || part.equalsIgnoreCase("temporal lobe") || part.equalsIgnoreCase("prefrontal cortex") || part.equalsIgnoreCase("cerebellum"))
+            cmoId = dao.getTermByTermName("cerebrum ribonucleic acid composition measurement","CMO");
+        else if (part.equalsIgnoreCase("skeletal muscle tissue"))
+            cmoId = dao.getTermByTermName("skeletal muscle ribonucleic acid composition measurement","CMO");
+        else if (part.equalsIgnoreCase("smooth muscle tissue"))
+            cmoId = dao.getTermByTermName("smooth muscle ribonucleic acid composition measurement","CMO");
+        else if (part.equalsIgnoreCase("breast"))
+            cmoId = dao.getTermByTermName("mammary organ ribonucleic acid composition measurement","CMO");
+        else if (part.equalsIgnoreCase("leukocyte"))
+            cmoId = dao.getTermByTermName("white blood cell ribonucleic acid composition measurement","CMO");
+        else if (part.equalsIgnoreCase("sigmoid colon"))
+            cmoId = dao.getTermByTermName("colon ribonucleic acid composition measurement","CMO");
+        else if (part.equalsIgnoreCase("duodenum"))
+            cmoId = dao.getTermByTermName("small intestine ribonucleic acid composition measurement","CMO");
+        else if (part.equalsIgnoreCase("endometrium"))
+            cmoId = dao.getTermByTermName("uterus ribonucleic acid composition measurement","CMO");
+        else if (part.equalsIgnoreCase("fallopian tube"))
+            cmoId = dao.getTermByTermName("oviduct ribonucleic acid composition measurement","CMO");
+        else if (part.equalsIgnoreCase("saliva-secreting gland"))
+            cmoId = dao.getTermByTermName("salivary gland ribonucleic acid composition measurement","CMO");
+        else if (part.equalsIgnoreCase("vermiform appendix"))
+            cmoId = dao.getTermByTermName("appendix ribonucleic acid composition measurement","CMO");
+        else if (part.equalsIgnoreCase("zone of skin"))
+            cmoId = dao.getTermByTermName("skin ribonucleic acid composition measurement","CMO");
+        else
+            cmoId = dao.getTermByTermName(term,"CMO");
+
+        return cmoId;
     }
 
     public Map getStrainOntIds() {
@@ -380,6 +603,14 @@ public class Manager {
 
     public void setTpmFile(String tpmFile) {
         this.tpmFile = tpmFile;
+    }
+
+    public boolean isFirstRun() {
+        return firstRun;
+    }
+
+    public void setFirstRun(boolean firstRun) {
+        this.firstRun = firstRun;
     }
 }
 
