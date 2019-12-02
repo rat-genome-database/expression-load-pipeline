@@ -236,7 +236,7 @@ public class Manager {
 
                 Sample s;
                 if(!headerVal.contains("Sample Characteristic[sex]") && noOfRuns == 0 && firstRun == true)
-                    sample.setSex(cols[headerIndex.get("Factor Value[disease]")]);
+                    sample.setSex("manual");
 
                 if(firstRun == false)
                     s = dao.getSampleFromBioSampleId(sample);
@@ -453,7 +453,8 @@ public class Manager {
         }else if(part.equalsIgnoreCase("aorta") || part.equalsIgnoreCase("coronary artery") || part.equalsIgnoreCase("tibial artery")){
             exprName = "artery molecular composition trait";
         }else if(part.equalsIgnoreCase("cortex of kidney") || part.equalsIgnoreCase("left renal pelvis") || part.equalsIgnoreCase("renal pelvis") || part.equalsIgnoreCase("right renal pelvis")
-                || part.equalsIgnoreCase("right renal cortex") || part.equalsIgnoreCase("left renal cortex") ){
+                || part.equalsIgnoreCase("right renal cortex") || part.equalsIgnoreCase("left renal cortex") || part.equalsIgnoreCase("left kidney")
+                || part.equalsIgnoreCase("right kidney")){
             exprName = "kidney molecular composition trait";
         }else if(part.equalsIgnoreCase("atrium auricular region") || part.equalsIgnoreCase("heart left ventricle") || part.equalsIgnoreCase("left cardiac atrium") || part.equalsIgnoreCase("mitral valve")
                 || part.equalsIgnoreCase("pulmonary valve") || part.equalsIgnoreCase("tricuspid valve") ){
