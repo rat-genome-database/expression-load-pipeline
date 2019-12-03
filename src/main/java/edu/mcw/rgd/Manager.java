@@ -258,8 +258,26 @@ public class Manager {
                 if(!headerVal.contains("Sample Characteristic[sex]") && noOfRuns == 0 && firstRun == true)
                     sample.setSex("manual");
 
-                if(headerVal.contains("Factor Value[disease]") && headerVal.contains("Factor Value[individual]"))
-                    sample.setNotes(cols[headerIndex.get("Factor Value[disease]")] + "," + cols[headerIndex.get("Factor Value[individual]")]);
+                if(headerVal.contains("Factor Value[disease]") )
+                    sample.setNotes(cols[headerIndex.get("Factor Value[disease]")]);
+
+                if(headerVal.contains("Factor Value[individual]")) {
+                    String notes = sample.getNotes();
+                    if(notes != null)
+                        notes += ",";
+                    else notes = "";
+                    notes += cols[headerIndex.get("Factor Value[individual]")];
+                    sample.setNotes(notes);
+                }
+                if(headerVal.contains("Factor Value[ancestry category]")) {
+                    String notes = sample.getNotes();
+                    if(notes != null)
+                        notes += ",";
+                    else notes = "";
+                    notes += cols[headerIndex.get("Factor Value[ancestry category]")];
+                    sample.setNotes(notes);
+                }
+
 
                 if(firstRun == false)
                     s = dao.getSampleFromBioSampleId(sample);
