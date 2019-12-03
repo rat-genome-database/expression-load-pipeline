@@ -41,6 +41,11 @@ public class DAO extends AbstractDAO {
          sql += "= '"+sample.getStrainAccId()+"'";
         else sql += " is null";
 
+        if(sample.getCellTypeAccId() != null)
+            sql += " and cell_type_ont_id = '"+sample.getCellTypeAccId()+"'";
+        else sql += " and cell_type_ont_id is null";
+
+
         if(sample.getSex() != null)
            sql += " and sex='" + sample.getSex() + "'";
         else sql += " and sex is null";
@@ -53,8 +58,15 @@ public class DAO extends AbstractDAO {
             sql += " and age_days_from_dob_low_bound = "+sample.getAgeDaysFromLowBound();
         else sql += " and age_days_from_dob_high_bound is null";
 
-System.out.println(sql);
+        if(sample.getNotes() != null)
+            sql += " and dbms_lob.compare(sample_notes, '"+sample.getNotes()+"') = 0";
+
+
+
         SampleQuery sq = new SampleQuery(this.getDataSource(), sql);
+
+        System.out.println(sql);
+
         List<Sample> samples = sq.execute();
         if(samples == null || samples.isEmpty())
             return null;

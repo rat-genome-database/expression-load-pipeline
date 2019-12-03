@@ -208,6 +208,26 @@ public class Manager {
                 String tissueOntId = tissue.split("http://purl.obolibrary.org/obo/")[1];
                 tissueOntId = tissueOntId.replace("_",":");
 
+                if(headerIndex.containsKey("Sample Characteristic Ontology Term[cell line]")) {
+                    String cellLine = cols[headerIndex.get("Sample Characteristic Ontology Term[cell line]")];
+                    if(cellLine != null) {
+                        String strainOntId = cellLine.split("http://www.ebi.ac.uk/efo/")[1];
+                        strainOntId = strainOntId.replace("_", ":");
+                        sample.setStrainAccId(strainOntId);
+                    } else {
+                        cellLine = cols[headerIndex.get("Sample Characteristic[cell line]")];
+                        String strainOntId = dao.getTermByTermName(cellLine,"EFO");
+                        sample.setStrainAccId(strainOntId);
+                    }
+                }
+                if(headerIndex.containsKey("Sample Characteristic Ontology Term[cell type]")) {
+                    String cellType = cols[headerIndex.get("Sample Characteristic Ontology Term[cell type]")];
+                    String cellTypeOntId = cellType.split("http://purl.obolibrary.org/obo/")[1];
+                    cellTypeOntId = cellTypeOntId.replace("_",":");
+                    sample.setCellTypeAccId(cellTypeOntId);
+                }
+
+
                 String part = cols[headerIndex.get("Sample Characteristic[organism part]")];
                 part = part.replace("'","");
 
@@ -237,6 +257,9 @@ public class Manager {
                 Sample s;
                 if(!headerVal.contains("Sample Characteristic[sex]") && noOfRuns == 0 && firstRun == true)
                     sample.setSex("manual");
+
+                if(headerVal.contains("Factor Value[disease]") && headerVal.contains("Factor Value[individual]"))
+                    sample.setNotes(cols[headerIndex.get("Factor Value[disease]")] + "," + cols[headerIndex.get("Factor Value[individual]")]);
 
                 if(firstRun == false)
                     s = dao.getSampleFromBioSampleId(sample);
