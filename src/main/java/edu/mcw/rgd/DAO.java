@@ -73,7 +73,7 @@ public class DAO extends AbstractDAO {
         else return samples.get(0);
     }
     public Sample getSampleFromBioSampleId(Sample sample) throws Exception{
-        String sql = "Select * from Sample where strain_ont_id is null and biosample_id like '%"+sample.getBioSampleId()+"%'";
+        String sql = "Select * from Sample where biosample_id like '%"+sample.getBioSampleId()+"%'";
 
 
         System.out.println(sql);
