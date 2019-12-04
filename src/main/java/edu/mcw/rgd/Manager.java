@@ -179,6 +179,8 @@ public class Manager {
                 int ageLow = 0;
                 if(headerIndex.containsKey("Sample Characteristic[sex]") ) {
                     sex = cols[headerIndex.get("Sample Characteristic[sex]")];
+                    if(sex.equalsIgnoreCase("unknown"))
+                        sex = "not specified";
                     sample.setSex(sex);
                     if( headerIndex.containsKey("Sample Characteristic[age]") ) {
                         ageHigh = getAgeHigh(cols,headerIndex);
@@ -210,19 +212,24 @@ public class Manager {
 
                 if(headerIndex.containsKey("Sample Characteristic Ontology Term[cell line]")) {
                     String cellLine = cols[headerIndex.get("Sample Characteristic Ontology Term[cell line]")];
-                    if(cellLine != null) {
+                    if(!cellLine.isEmpty()) {
                         String strainOntId = cellLine.split("http://www.ebi.ac.uk/efo/")[1];
                         strainOntId = strainOntId.replace("_", ":");
                         sample.setStrainAccId(strainOntId);
                     } else {
                         cellLine = cols[headerIndex.get("Sample Characteristic[cell line]")];
                         String strainOntId = dao.getTermByTermName(cellLine,"EFO");
-                        sample.setStrainAccId(strainOntId);
+                        if(strainOntId == null)
+                            sample.setStrainAccId(cellLine);
+                        else sample.setStrainAccId(strainOntId);
                     }
                 }
                 if(headerIndex.containsKey("Sample Characteristic Ontology Term[cell type]")) {
                     String cellType = cols[headerIndex.get("Sample Characteristic Ontology Term[cell type]")];
-                    String cellTypeOntId = cellType.split("http://purl.obolibrary.org/obo/")[1];
+                    String cellTypeOntId="";
+                    if(cellType.contains("EFO"))
+                        cellTypeOntId = cellType.split("http://www.ebi.ac.uk/efo/")[1];
+                    else cellTypeOntId = cellType.split("http://purl.obolibrary.org/obo/")[1];
                     cellTypeOntId = cellTypeOntId.replace("_",":");
                     sample.setCellTypeAccId(cellTypeOntId);
                 }
@@ -258,25 +265,7 @@ public class Manager {
                 if(!headerVal.contains("Sample Characteristic[sex]") && noOfRuns == 0 && firstRun == true)
                     sample.setSex("manual");
 
-                if(headerVal.contains("Factor Value[disease]") )
-                    sample.setNotes(cols[headerIndex.get("Factor Value[disease]")]);
-
-                if(headerVal.contains("Factor Value[individual]")) {
-                    String notes = sample.getNotes();
-                    if(notes != null)
-                        notes += ",";
-                    else notes = "";
-                    notes += cols[headerIndex.get("Factor Value[individual]")];
-                    sample.setNotes(notes);
-                }
-                if(headerVal.contains("Factor Value[ancestry category]")) {
-                    String notes = sample.getNotes();
-                    if(notes != null)
-                        notes += ",";
-                    else notes = "";
-                    notes += cols[headerIndex.get("Factor Value[ancestry category]")];
-                    sample.setNotes(notes);
-                }
+                sample.setNotes(getNotes(cols,headerIndex));
 
 
                 if(firstRun == false)
@@ -336,10 +325,40 @@ public class Manager {
         logSummary.info("Samples Inserted : " + samples.size());
         logSummary.info("Gene Expression Records Inserted : " + geneExpressionRecords.size());
         reader.close();
-        loadTPMValues();
+       loadTPMValues();
         dao.updateExpressionLevel();
     }
 
+    public String getNotes(String[] cols, Map<String,Integer> headerIndex){
+        String notes = "";
+        if(headerVal.contains("Factor Value[disease]") )
+            notes = (cols[headerIndex.get("Factor Value[disease]")]);
+
+        if(headerVal.contains("Factor Value[individual]")) {
+            if(!notes.isEmpty())
+                notes += ",";
+            else notes = "";
+            notes += cols[headerIndex.get("Factor Value[individual]")];
+
+        }
+        if(headerVal.contains("Factor Value[ancestry category]")) {
+
+            if(!notes.isEmpty())
+                notes += ",";
+            else notes = "";
+            notes += cols[headerIndex.get("Factor Value[ancestry category]")];
+
+        }
+        if(headerVal.contains("Factor Value[growth condition]")) {
+
+            if(!notes.isEmpty())
+                notes += ",";
+            else notes = "";
+            notes += cols[headerIndex.get("Factor Value[growth condition]")];
+
+        }
+        return notes;
+    }
     public int getAgeHigh(String[] cols, Map<String,Integer> headerIndex) {
         String age = cols[headerIndex.get("Sample Characteristic[age]")];
         int ageHigh = 0;
@@ -387,7 +406,12 @@ public class Manager {
             }
         }
         if (age.contains("year")) {
-            ageHigh = Integer.valueOf(age.split("year")[0].trim());
+            String ageSplit = age.split("year")[0].trim();
+            if(ageSplit.contains("to")) {
+               String[] ages  = ageSplit.split("to");
+               ageHigh = Integer.valueOf(ages[1].trim());
+            }else ageHigh = Integer.valueOf(ageSplit);
+
             ageHigh = ageHigh * 365;
         }
         return ageHigh;
@@ -438,7 +462,11 @@ public class Manager {
             }
         }
         if (age.contains("year")) {
-            ageLow = Integer.valueOf(age.split("year")[0].trim());
+            String ageSplit = age.split("year")[0].trim();
+            if(ageSplit.contains("to")) {
+                String[] ages  = ageSplit.split("to");
+                ageLow = Integer.valueOf(ages[0].trim());
+            }else ageLow = Integer.valueOf(ageSplit);
             ageLow = ageLow * 365;
         }
         return ageLow;
