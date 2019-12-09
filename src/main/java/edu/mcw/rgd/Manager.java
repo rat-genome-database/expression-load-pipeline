@@ -329,7 +329,7 @@ public class Manager {
         logSummary.info("Experiments Inserted : " + experiments.size());
         logSummary.info("Samples Inserted : " + samples.size());
         logSummary.info("Gene Expression Records Inserted : " + geneExpressionRecords.size());
-        reader.close();
+       reader.close();
        loadTPMValues();
         dao.updateExpressionLevel();
     }
@@ -547,7 +547,7 @@ public class Manager {
             exprName = "lymphocyte morphology trait";
         }else if(part.equalsIgnoreCase("dura mater")){
             exprName = "meninges morphology trait";
-        }else if(part.equalsIgnoreCase("tibial nerve")){
+        }else if(part.equalsIgnoreCase("tibial nerve") || part.equalsIgnoreCase("peripheral nervous system")){
             exprName = "nervous system morphology trait";
         }else if(part.equalsIgnoreCase("small intestine Peyers patch")){
             exprName = "Peyers patch morphology trait";
@@ -567,11 +567,14 @@ public class Manager {
             exprName = "bone morphology trait";
         }else if(part.equalsIgnoreCase("epithelium of bronchus")){
             exprName = "lung molecular composition trait";
+        }else if(part.equalsIgnoreCase("mucosa")) {
+            exprName = "vertebrate trait";
         }
 
         String traitId = dao.getTermByTermName(exprName,"VT");
         if(traitId == null)
              exprName = part + " morphology trait";
+
 
             return exprName;
     }
