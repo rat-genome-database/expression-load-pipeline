@@ -58,14 +58,14 @@ public class DAO extends AbstractDAO {
             sql += " and age_days_from_dob_low_bound = "+sample.getAgeDaysFromLowBound();
         else sql += " and age_days_from_dob_high_bound is null";
 
-        if(sample.getNotes() != null)
+        if(sample.getNotes() != null && !sample.getNotes().isEmpty())
             sql += " and dbms_lob.compare(sample_notes, '"+sample.getNotes()+"') = 0";
 
 
 
         SampleQuery sq = new SampleQuery(this.getDataSource(), sql);
 
-        System.out.println(sql);
+   //     System.out.println(sql);
 
         List<Sample> samples = sq.execute();
         if(samples == null || samples.isEmpty())
@@ -98,7 +98,7 @@ public class DAO extends AbstractDAO {
             sql += " and trait_ont_id='"+e.getTraitOntId()+"'";
         else sql += " and trait_ont_id is null";
 
-
+        System.out.println(sql);
         ExperimentQuery sq = new ExperimentQuery(this.getDataSource(), sql);
         List<Experiment> experiments = sq.execute();
         if(experiments == null || experiments.isEmpty())

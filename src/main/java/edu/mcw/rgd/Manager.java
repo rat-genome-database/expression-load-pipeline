@@ -205,12 +205,24 @@ public class Manager {
                     sample.setStrainAccId(strainOntId);
                 } else sample.setStrainAccId(null);
 
+                String part;
+                if(headerIndex.containsKey("Sample Characteristic[sampling site]"))
+                    part = cols[headerIndex.get("Sample Characteristic[sampling site]")];
+                else part = cols[headerIndex.get("Sample Characteristic[organism part]")];
 
-                String tissue = cols[headerIndex.get("Sample Characteristic Ontology Term[organism part]")];
-                String tissueOntId = tissue.split("http://purl.obolibrary.org/obo/")[1];
-                tissueOntId = tissueOntId.replace("_",":");
+                part = part.replace("'","");
 
-                if(headerIndex.containsKey("Sample Characteristic Ontology Term[cell line]")) {
+                String tissue;
+                if(headerIndex.containsKey("Sample Characteristic Ontology Term[sampling site]"))
+                    tissue = cols[headerIndex.get("Sample Characteristic Ontology Term[sampling site]")];
+                else tissue = cols[headerIndex.get("Sample Characteristic Ontology Term[organism part]")];
+                String tissueOntId;
+                if(tissue != null && tissue.contains("http://purl.obolibrary.org/obo/")) {
+                    tissueOntId  = tissue.split("http://purl.obolibrary.org/obo/")[1];
+                    tissueOntId = tissueOntId.replace("_", ":");
+                }else tissueOntId = part;
+
+                if(headerVal.contains("Sample Characteristic[cell line]") && headerIndex.containsKey("Sample Characteristic Ontology Term[cell line]")) {
                     String cellLine = cols[headerIndex.get("Sample Characteristic Ontology Term[cell line]")];
                     if(!cellLine.isEmpty()) {
                         String strainOntId = cellLine.split("http://www.ebi.ac.uk/efo/")[1];
@@ -224,19 +236,18 @@ public class Manager {
                         else sample.setStrainAccId(strainOntId);
                     }
                 }
-                if(headerIndex.containsKey("Sample Characteristic Ontology Term[cell type]")) {
+                if(headerVal.contains("Sample Characteristic[cell Type]") && headerIndex.containsKey("Sample Characteristic Ontology Term[cell type]")) {
                     String cellType = cols[headerIndex.get("Sample Characteristic Ontology Term[cell type]")];
                     String cellTypeOntId="";
-                    if(cellType.contains("EFO"))
-                        cellTypeOntId = cellType.split("http://www.ebi.ac.uk/efo/")[1];
-                    else cellTypeOntId = cellType.split("http://purl.obolibrary.org/obo/")[1];
-                    cellTypeOntId = cellTypeOntId.replace("_",":");
-                    sample.setCellTypeAccId(cellTypeOntId);
+                    if(!cellType.isEmpty()) {
+                        if (cellType.contains("EFO"))
+                            cellTypeOntId = cellType.split("http://www.ebi.ac.uk/efo/")[1];
+                        else cellTypeOntId = cellType.split("http://purl.obolibrary.org/obo/")[1];
+                        cellTypeOntId = cellTypeOntId.replace("_", ":");
+                        sample.setCellTypeAccId(cellTypeOntId);
+                    }else sample.setCellTypeAccId(cols[headerIndex.get("Sample Characteristic[cell type]")]);
                 }
 
-
-                String part = cols[headerIndex.get("Sample Characteristic[organism part]")];
-                part = part.replace("'","");
 
                 experiment.setStudyId(getStudyId());
                 experiment.setName(getExperimentName(part));
@@ -388,6 +399,8 @@ public class Manager {
                 ageHigh = 92 * 365;
             else if(developage.contains("fetal"))
                 ageHigh = 40 * 7;
+            else if(developage.contains("juvenile"))
+                ageHigh = 15 * 365;
             return ageHigh;
         }
 
@@ -445,6 +458,8 @@ public class Manager {
                 ageLow = 14 * 365;
             else if(developage.contains("fetal"))
                 ageLow = 16 * 7;
+            else if(developage.contains("juvenile"))
+                ageLow = 4 * 365;
             return ageLow;
         }
 
@@ -486,7 +501,7 @@ public class Manager {
 
             exprName = "brain molecular composition trait";
         else if(part.equalsIgnoreCase("skeletal muscle tissue") || part.equalsIgnoreCase("smooth muscle tissue") || part.equalsIgnoreCase("diaphragm") || part.equalsIgnoreCase("muscle of arm")
-                || part.equalsIgnoreCase("muscle of leg") || part.equalsIgnoreCase("skeletal muscle of trunk") || part.equalsIgnoreCase("skeletal muscle organ") ){
+                || part.equalsIgnoreCase("muscle of leg") || part.equalsIgnoreCase("skeletal muscle of trunk") || part.equalsIgnoreCase("skeletal muscle organ") || part.equalsIgnoreCase("musculature")){
             exprName = "muscle molecular composition trait";
         }else if(part.equalsIgnoreCase("adipose tissue") || part.equalsIgnoreCase("subcutaneous adipose tissue")){
             exprName = "adipose molecular composition trait";
@@ -508,7 +523,8 @@ public class Manager {
             exprName = "uterus ribonucleic acid amount";
         }else if(part.equalsIgnoreCase("fallopian tube")){
             exprName = "oviduct morphology trait";
-        }else if(part.equalsIgnoreCase("ectocervix") || part.equalsIgnoreCase("endocervix") || part.equalsIgnoreCase("uterine cervix") || part.equalsIgnoreCase("vagina")){
+        }else if(part.equalsIgnoreCase("ectocervix") || part.equalsIgnoreCase("endocervix") || part.equalsIgnoreCase("uterine cervix") || part.equalsIgnoreCase("vagina")
+                || part.equalsIgnoreCase("vulva") || part.equalsIgnoreCase("mammary")){
             exprName = "female reproductive system morphology trait";
         }else if(part.equalsIgnoreCase("epididymis") || part.equalsIgnoreCase("penis") || part.equalsIgnoreCase("seminal vesicle") || part.equalsIgnoreCase("vas deferens")){
             exprName = "male reproductive system morphology trait";
@@ -517,7 +533,8 @@ public class Manager {
                 || part.equalsIgnoreCase("greater omentum") || part.equalsIgnoreCase("minor salivary gland") || part.equalsIgnoreCase("mouth mucosa")
                 || part.equalsIgnoreCase("parotid gland") || part.equalsIgnoreCase("submandibular gland")){
             exprName = "gastrointestinal system morphology trait";
-        }else if(part.equalsIgnoreCase("zone of skin") || part.equalsIgnoreCase("transformed skin fibroblast") || part.equalsIgnoreCase("lower leg skin") || part.equalsIgnoreCase("suprapubic skin")){
+        }else if(part.equalsIgnoreCase("zone of skin") || part.equalsIgnoreCase("transformed skin fibroblast") || part.equalsIgnoreCase("lower leg skin") || part.equalsIgnoreCase("suprapubic skin")
+                || part.equalsIgnoreCase("hair follicle")){
             exprName = "skin molecular composition trait";
         }else if(part.equalsIgnoreCase("aorta") || part.equalsIgnoreCase("coronary artery") || part.equalsIgnoreCase("tibial artery")){
             exprName = "artery molecular composition trait";
@@ -530,7 +547,7 @@ public class Manager {
             exprName = "heart molecular composition trait";
         }else if(part.equalsIgnoreCase("C1 segment of cervical spinal cord")){
             exprName = "spinal cord molecular composition trait";
-        }else if(part.equalsIgnoreCase("blood")){
+        }else if(part.equalsIgnoreCase("blood") || part.equalsIgnoreCase("umbilical blood") || part.equalsIgnoreCase("venous blood") ){
             exprName = "hematopoietic system morphology trait";
         }else if(part.equalsIgnoreCase("EBV-transformed lymphocyte")){
             exprName = "lymphocyte morphology trait";
@@ -545,6 +562,9 @@ public class Manager {
             exprName = "respiratory system morphology trait";
         }else if(part.equalsIgnoreCase("throat")){
             exprName = "pharynx morphology trait";
+        }else if(part.equalsIgnoreCase("distal gut") || part.equalsIgnoreCase("proximal gut") || part.equalsIgnoreCase("terminal ileum") || part.equalsIgnoreCase("ileum")
+                || part.equalsIgnoreCase("caecum")){
+            exprName = "intestine morphology trait";
         }
 
         String traitId = dao.getTermByTermName(exprName,"VT");
