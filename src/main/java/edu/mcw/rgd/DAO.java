@@ -12,7 +12,9 @@ import edu.mcw.rgd.datamodel.pheno.GeneExpressionRecordValue;
 import edu.mcw.rgd.datamodel.pheno.Sample;
 import edu.mcw.rgd.process.Utils;
 import edu.mcw.rgd.process.mapping.MapManager;
+import org.springframework.jdbc.core.SqlParameter;
 
+import java.sql.Types;
 import java.util.List;
 
 
@@ -38,7 +40,7 @@ public class DAO extends AbstractDAO {
     public Sample getSample(Sample sample) throws Exception{
         String sql = "Select * from Sample where number_of_animals = "+sample.getNumberOfAnimals()+" and tissue_ont_id = '"+sample.getTissueAccId()+ "' and strain_ont_id";
         if(sample.getStrainAccId() != null)
-         sql += "= '"+sample.getStrainAccId()+"'";
+            sql += "= '"+sample.getStrainAccId()+"'";
         else sql += " is null";
 
         if(sample.getCellTypeAccId() != null)
@@ -47,7 +49,7 @@ public class DAO extends AbstractDAO {
 
 
         if(sample.getSex() != null)
-           sql += " and sex='" + sample.getSex() + "'";
+            sql += " and sex='" + sample.getSex() + "'";
         else sql += " and sex is null";
 
         if(sample.getAgeDaysFromHighBound() != null)
@@ -58,14 +60,17 @@ public class DAO extends AbstractDAO {
             sql += " and age_days_from_dob_low_bound = "+sample.getAgeDaysFromLowBound();
         else sql += " and age_days_from_dob_high_bound is null";
 
-        if(sample.getNotes() != null && !sample.getNotes().isEmpty())
-            sql += " and dbms_lob.compare(sample_notes, '"+sample.getNotes()+"') = 0";
-
+        if(sample.getNotes() != null && !sample.getNotes().isEmpty()) {
+            String notes = sample.getNotes();
+            notes = notes.replaceAll("'","''");
+            sql += " and dbms_lob.compare(sample_notes, '" + notes + "') = 0";
+        }
 
 
         SampleQuery sq = new SampleQuery(this.getDataSource(), sql);
 
-   //     System.out.println(sql);
+
+       System.out.println(sql);
 
         List<Sample> samples = sq.execute();
         if(samples == null || samples.isEmpty())

@@ -179,7 +179,7 @@ public class Manager {
                 int ageLow = 0;
                 if(headerIndex.containsKey("Sample Characteristic[sex]") ) {
                     sex = cols[headerIndex.get("Sample Characteristic[sex]")];
-                    if(sex.equalsIgnoreCase("unknown"))
+                    if(sex.equalsIgnoreCase("unknown") || sex.equalsIgnoreCase("not available"))
                         sex = "not specified";
                     sample.setSex(sex);
                     if( headerIndex.containsKey("Sample Characteristic[age]") ) {
@@ -222,19 +222,13 @@ public class Manager {
                     tissueOntId = tissueOntId.replace("_", ":");
                 }else tissueOntId = part;
 
-                if(headerVal.contains("Sample Characteristic[cell line]") && headerIndex.containsKey("Sample Characteristic Ontology Term[cell line]")) {
-                    String cellLine = cols[headerIndex.get("Sample Characteristic Ontology Term[cell line]")];
-                    if(!cellLine.isEmpty()) {
-                        String strainOntId = cellLine.split("http://www.ebi.ac.uk/efo/")[1];
-                        strainOntId = strainOntId.replace("_", ":");
-                        sample.setStrainAccId(strainOntId);
-                    } else {
-                        cellLine = cols[headerIndex.get("Sample Characteristic[cell line]")];
-                        String strainOntId = dao.getTermByTermName(cellLine,"EFO");
+                if(headerVal.contains("Sample Characteristic[cell line]")) {
+                    String cellLine = cols[headerIndex.get("Sample Characteristic[cell line]")];
+                        String strainOntId = dao.getTermByTermName(cellLine,"CVCL");
                         if(strainOntId == null)
                             sample.setStrainAccId(cellLine);
                         else sample.setStrainAccId(strainOntId);
-                    }
+
                 }
                 if(headerVal.contains("Sample Characteristic[cell Type]") && headerIndex.containsKey("Sample Characteristic Ontology Term[cell type]")) {
                     String cellType = cols[headerIndex.get("Sample Characteristic Ontology Term[cell type]")];
@@ -408,7 +402,7 @@ public class Manager {
             ageHigh = Integer.valueOf(age.split("week")[0].trim());
             ageHigh = ageHigh * 7;
         }else if (age.contains("month")) {
-            ageHigh = Integer.valueOf(age.split("week")[0].trim());
+            ageHigh = Integer.valueOf(age.split("month")[0].trim());
             ageHigh = ageHigh * 30;
         }
         else if (age.contains("day")) {
@@ -467,7 +461,7 @@ public class Manager {
             ageLow = Integer.valueOf(age.split("week")[0].trim());
             ageLow = ageLow * 7;
         }else if (age.contains("month")) {
-            ageLow = Integer.valueOf(age.split("week")[0].trim());
+            ageLow = Integer.valueOf(age.split("month")[0].trim());
             ageLow = ageLow * 30;
         }else if (age.contains("day")) {
             if (cols[headerIndex.get("Sample Characteristic[developmental stage]")].equalsIgnoreCase("embryo")) {
@@ -558,13 +552,21 @@ public class Manager {
         }else if(part.equalsIgnoreCase("small intestine Peyers patch")){
             exprName = "Peyers patch morphology trait";
             return exprName;
-        }else if(part.equalsIgnoreCase("trachea") || part.equalsIgnoreCase("olfactory apparatus")){
+        }else if(part.equalsIgnoreCase("trachea") || part.equalsIgnoreCase("olfactory apparatus") || part.equalsIgnoreCase("pleura")){
             exprName = "respiratory system morphology trait";
-        }else if(part.equalsIgnoreCase("throat")){
+        }else if(part.equalsIgnoreCase("throat") || part.equalsIgnoreCase("chordate pharynx")){
             exprName = "pharynx morphology trait";
         }else if(part.equalsIgnoreCase("distal gut") || part.equalsIgnoreCase("proximal gut") || part.equalsIgnoreCase("terminal ileum") || part.equalsIgnoreCase("ileum")
                 || part.equalsIgnoreCase("caecum")){
             exprName = "intestine morphology trait";
+        }else if(part.equalsIgnoreCase("oral cavity")){
+            exprName = "mouth morphology trait";
+        }else if(part.equalsIgnoreCase("cartilage tissue")){
+            exprName = "cartilage morphology trait";
+        }else if(part.equalsIgnoreCase("bone tissue")){
+            exprName = "bone morphology trait";
+        }else if(part.equalsIgnoreCase("epithelium of bronchus")){
+            exprName = "lung molecular composition trait";
         }
 
         String traitId = dao.getTermByTermName(exprName,"VT");
