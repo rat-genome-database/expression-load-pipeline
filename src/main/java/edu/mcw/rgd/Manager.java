@@ -230,7 +230,7 @@ public class Manager {
                         else sample.setStrainAccId(strainOntId);
 
                 }
-                if(headerVal.contains("Sample Characteristic[cell Type]") && headerIndex.containsKey("Sample Characteristic Ontology Term[cell type]")) {
+                if(headerVal.contains("Sample Characteristic[cell type]") && headerIndex.containsKey("Sample Characteristic Ontology Term[cell type]")) {
                     String cellType = cols[headerIndex.get("Sample Characteristic Ontology Term[cell type]")];
                     String cellTypeOntId="";
                     if(!cellType.isEmpty()) {
@@ -331,7 +331,7 @@ public class Manager {
         logSummary.info("Gene Expression Records Inserted : " + geneExpressionRecords.size());
        reader.close();
        loadTPMValues();
-        dao.updateExpressionLevel();
+       dao.updateExpressionLevel();
     }
 
     public String getNotes(String[] cols, Map<String,Integer> headerIndex){
@@ -541,7 +541,7 @@ public class Manager {
             exprName = "heart molecular composition trait";
         }else if(part.equalsIgnoreCase("C1 segment of cervical spinal cord")){
             exprName = "spinal cord molecular composition trait";
-        }else if(part.equalsIgnoreCase("blood") || part.equalsIgnoreCase("umbilical blood") || part.equalsIgnoreCase("venous blood") ){
+        }else if(part.equalsIgnoreCase("blood") || part.equalsIgnoreCase("umbilical cord blood") || part.equalsIgnoreCase("venous blood") ){
             exprName = "hematopoietic system morphology trait";
         }else if(part.equalsIgnoreCase("EBV-transformed lymphocyte")){
             exprName = "lymphocyte morphology trait";
