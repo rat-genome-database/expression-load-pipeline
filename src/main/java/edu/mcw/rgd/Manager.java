@@ -177,27 +177,30 @@ public class Manager {
                 String sex = null;
                 int ageHigh = 0;
                 int ageLow = 0;
-                if(headerIndex.containsKey("Sample Characteristic[sex]") ) {
-                    sex = cols[headerIndex.get("Sample Characteristic[sex]")];
-                    if(sex.equalsIgnoreCase("unknown") || sex.equalsIgnoreCase("not available"))
-                        sex = "not specified";
-                    sample.setSex(sex);
-                    if( headerIndex.containsKey("Sample Characteristic[age]") ) {
-                        ageHigh = getAgeHigh(cols,headerIndex);
-                        ageLow = getAgeLow(cols,headerIndex);
-                        sample.setAgeDaysFromHighBound(ageHigh);
-                        sample.setAgeDaysFromLowBound(ageLow);
-                    } else {
-                        sample.setAgeDaysFromHighBound(null);
-                        sample.setAgeDaysFromLowBound(null);
-                    }
-
-                }else {
+             /*   if(!headerVal.contains("Sample Characteristic[sex]") && noOfRuns == 0 ) {
+                    sample.setSex("manual");
                     sample.setAgeDaysFromHighBound(null);
                     sample.setAgeDaysFromLowBound(null);
-                    sample.setSex("not specified");
                 }
+                else {
+            */        if (headerIndex.containsKey("Sample Characteristic[sex]")) {
+                    sex = cols[headerIndex.get("Sample Characteristic[sex]")];
+                    if (sex.equalsIgnoreCase("unknown") || sex.equalsIgnoreCase("not available"))
+                        sex = "not specified";
+                    sample.setSex(sex);
+                }else sample.setSex("not specified");
+                        if (headerIndex.containsKey("Sample Characteristic[age]") || headerIndex.containsKey("Sample Characteristic[developmental stage]")) {
+                            ageHigh = getAgeHigh(cols, headerIndex);
+                            ageLow = getAgeLow(cols, headerIndex);
+                            sample.setAgeDaysFromHighBound(ageHigh);
+                            sample.setAgeDaysFromLowBound(ageLow);
+                        } else {
+                            sample.setAgeDaysFromHighBound(null);
+                            sample.setAgeDaysFromLowBound(null);
+                        }
 
+
+            //    }
                 //Strian doesnt exist for human it exists for rat
                 if(headerIndex.containsKey("Sample Characteristic[strain]")) {
                     String strain = cols[headerIndex.get("Sample Characteristic[strain]")];
@@ -206,16 +209,16 @@ public class Manager {
                 } else sample.setStrainAccId(null);
 
                 String part;
-                if(headerIndex.containsKey("Sample Characteristic[sampling site]"))
-                    part = cols[headerIndex.get("Sample Characteristic[sampling site]")];
-                else part = cols[headerIndex.get("Sample Characteristic[organism part]")];
+                if(headerIndex.containsKey("Sample Characteristic[organism part]"))
+                    part = cols[headerIndex.get("Sample Characteristic[organism part]")];
+                else part = cols[headerIndex.get("Sample Characteristic[sampling site]")];
 
                 part = part.replace("'","");
 
                 String tissue;
-                if(headerIndex.containsKey("Sample Characteristic Ontology Term[sampling site]"))
-                    tissue = cols[headerIndex.get("Sample Characteristic Ontology Term[sampling site]")];
-                else tissue = cols[headerIndex.get("Sample Characteristic Ontology Term[organism part]")];
+                if(headerIndex.containsKey("Sample Characteristic Ontology Term[organism part]"))
+                    tissue = cols[headerIndex.get("Sample Characteristic Ontology Term[organism part]")];
+                else tissue = cols[headerIndex.get("Sample Characteristic Ontology Term[sampling site]")];
                 String tissueOntId;
                 if(tissue != null && tissue.contains("http://purl.obolibrary.org/obo/")) {
                     tissueOntId  = tissue.split("http://purl.obolibrary.org/obo/")[1];
@@ -267,8 +270,7 @@ public class Manager {
                 samples.add(sample);
 
                 Sample s;
-                if(!headerVal.contains("Sample Characteristic[sex]") && noOfRuns == 0 && firstRun == true)
-                    sample.setSex("manual");
+
 
                 sample.setNotes(getNotes(cols,headerIndex));
 
@@ -283,7 +285,7 @@ public class Manager {
                         System.out.println("Inserted Sample :" + sampleId);
                     } else {
                         sampleId = s.getId();
-                        if(!s.getBioSampleId().contains(sample.getBioSampleId()))
+                        if(s.getBioSampleId() == null || !s.getBioSampleId().contains(sample.getBioSampleId()))
                         {
                             dao.updateBioSampleId(sampleId,sample);
                             System.out.println("Updated Sample :" + sampleId);
@@ -331,7 +333,7 @@ public class Manager {
         logSummary.info("Gene Expression Records Inserted : " + geneExpressionRecords.size());
        reader.close();
        loadTPMValues();
-       dao.updateExpressionLevel();
+      dao.updateExpressionLevel();
     }
 
     public String getNotes(String[] cols, Map<String,Integer> headerIndex){
@@ -365,12 +367,18 @@ public class Manager {
         return notes;
     }
     public int getAgeHigh(String[] cols, Map<String,Integer> headerIndex) {
-        String age = cols[headerIndex.get("Sample Characteristic[age]")];
+
         int ageHigh = 0;
         if(headerVal.contains("Sample Characteristic[developmental stage]")) {
             String developage = cols[headerIndex.get("Sample Characteristic[developmental stage]")];
             if(developage.contains("week post conception")) {
-                ageHigh = Integer.valueOf(age.split("week")[0].trim());
+                ageHigh = Integer.valueOf(developage.split("week")[0].trim());
+                ageHigh = ageHigh * 7;
+                ageHigh = ageHigh - 280;
+            }else if(developage.contains("post conception weeks")) {
+                String col = developage.split("post conception")[0].trim();
+                col = col.replaceAll("[^\\d]","");
+                ageHigh = Integer.valueOf(col.trim());
                 ageHigh = ageHigh * 7;
                 ageHigh = ageHigh - 280;
             }else if(developage.contains("adolescent")) {
@@ -395,9 +403,19 @@ public class Manager {
                 ageHigh = 40 * 7;
             else if(developage.contains("juvenile"))
                 ageHigh = 15 * 365;
+            else if(developage.contains("Carnegie Stage")) {
+                ageHigh = Integer.valueOf(developage.split("Carnegie Stage")[1].trim());
+                if(ageHigh == 13)
+                    ageHigh = -248;
+                else {
+                    int diff = ageHigh - 13;
+                    diff = diff * 3;
+                    ageHigh = -248 - diff;
+                }
+            }
             return ageHigh;
         }
-
+        String age = cols[headerIndex.get("Sample Characteristic[age]")];
         if (age.contains("week")) {
             ageHigh = Integer.valueOf(age.split("week")[0].trim());
             ageHigh = ageHigh * 7;
@@ -424,12 +442,19 @@ public class Manager {
         return ageHigh;
     }
     public int getAgeLow(String[] cols, Map<String,Integer> headerIndex) {
-        String age = cols[headerIndex.get("Sample Characteristic[age]")];
+
         int ageLow = 0;
         if(headerVal.contains("Sample Characteristic[developmental stage]")) {
             String developage = cols[headerIndex.get("Sample Characteristic[developmental stage]")];
             if(developage.contains("week post conception")) {
-                ageLow = Integer.valueOf(age.split("week")[0].trim());
+                ageLow = Integer.valueOf(developage.split("week")[0].trim());
+                ageLow = ageLow * 7;
+                ageLow = ageLow - 280;
+            }else if(developage.contains("post conception weeks")) {
+                String col = developage.split("post conception")[0].trim();
+                col = col.replaceAll("[^\\d.]","");
+                ageLow = Integer.valueOf(col.trim());
+
                 ageLow = ageLow * 7;
                 ageLow = ageLow - 280;
             }else if(developage.contains("adolescent")) {
@@ -454,9 +479,19 @@ public class Manager {
                 ageLow = 16 * 7;
             else if(developage.contains("juvenile"))
                 ageLow = 4 * 365;
+            else if(developage.contains("Carnegie Stage")) {
+                ageLow = Integer.valueOf(developage.split("Carnegie Stage")[1].trim());
+                if(ageLow == 13)
+                    ageLow = -252;
+                else {
+                    int diff = ageLow - 13;
+                    diff = diff * 3;
+                    ageLow = -252 - diff;
+                }
+            }
             return ageLow;
         }
-
+        String age = cols[headerIndex.get("Sample Characteristic[age]")];
         if (age.contains("week")) {
             ageLow = Integer.valueOf(age.split("week")[0].trim());
             ageLow = ageLow * 7;
@@ -491,7 +526,11 @@ public class Manager {
            || part.equalsIgnoreCase("hippocampal formation") || part.equalsIgnoreCase("hippocampus proper") || part.equalsIgnoreCase("hypothalamus") || part.equalsIgnoreCase("locus ceruleus")
            || part.equalsIgnoreCase("medulla oblongata") || part.equalsIgnoreCase("middle frontal gyrus") || part.equalsIgnoreCase("middle temporal gyrus") || part.equalsIgnoreCase("nucleus accumbens")
            || part.equalsIgnoreCase("occipital cortex") || part.equalsIgnoreCase("occipital lobe") || part.equalsIgnoreCase("parietal lobe") || part.equalsIgnoreCase("pineal body")
-           || part.equalsIgnoreCase("pituitary gland") || part.equalsIgnoreCase("putamen") || part.equalsIgnoreCase("substantia nigra") || part.equalsIgnoreCase("Brodmann area") )
+           || part.equalsIgnoreCase("pituitary gland") || part.equalsIgnoreCase("putamen") || part.equalsIgnoreCase("substantia nigra") || part.equalsIgnoreCase("Brodmann area")
+           || part.equalsIgnoreCase("basal ganglion")  || part.equalsIgnoreCase("choroid plexus")  || part.equalsIgnoreCase("telencephalon") || part.equalsIgnoreCase("pons")
+           || part.equalsIgnoreCase("midbrain") || part.equalsIgnoreCase("forebrain fragment") || part.equalsIgnoreCase("diencephalon and midbrain") || part.equalsIgnoreCase("forebrain and midbrain")
+           || part.equalsIgnoreCase("hindbrain without cerebellum") || part.equalsIgnoreCase("pituitary and diencephalon") || part.equalsIgnoreCase("brain fragment") || part.equalsIgnoreCase("hindbrain fragment")
+                || part.equalsIgnoreCase("hippocampus"))
 
             exprName = "brain molecular composition trait";
         else if(part.equalsIgnoreCase("skeletal muscle tissue") || part.equalsIgnoreCase("smooth muscle tissue") || part.equalsIgnoreCase("diaphragm") || part.equalsIgnoreCase("muscle of arm")
@@ -596,7 +635,11 @@ public class Manager {
 
         String cmoId = "";
         String term = part + " ribonucleic acid composition measurement";
-        if(part.equalsIgnoreCase("forebrain") || part.equalsIgnoreCase("hindbrain"))
+        if(part.equalsIgnoreCase("diencephalon and midbrain") || part.equalsIgnoreCase("forebrain and midbrain") || part.equalsIgnoreCase("hindbrain without cerebellum")
+                || part.equalsIgnoreCase("pituitary and diencephalon"))
+            term = "combined " + term;
+
+        if(part.equalsIgnoreCase("forebrain") || part.equalsIgnoreCase("hindbrain") || part.equalsIgnoreCase("brain fragment") || part.equalsIgnoreCase("midbrain"))
             cmoId = dao.getTermByTermName("brain ribonucleic acid composition measurement","CMO");
         else if (part.equalsIgnoreCase("frontal lobe") || part.equalsIgnoreCase("temporal lobe") || part.equalsIgnoreCase("prefrontal cortex") || part.equalsIgnoreCase("cerebellum"))
             cmoId = dao.getTermByTermName("cerebrum ribonucleic acid composition measurement","CMO");
@@ -622,6 +665,12 @@ public class Manager {
             cmoId = dao.getTermByTermName("appendix ribonucleic acid composition measurement","CMO");
         else if (part.equalsIgnoreCase("zone of skin"))
             cmoId = dao.getTermByTermName("skin ribonucleic acid composition measurement","CMO");
+        else if(part.equalsIgnoreCase("forebrain fragment"))
+            cmoId = dao.getTermByTermName("forebrain ribonucleic acid composition measurement","CMO");
+        else if(part.equalsIgnoreCase("hindbrain fragment"))
+            cmoId = dao.getTermByTermName("hindbrain ribonucleic acid composition measurement","CMO");
+        else if(part.equalsIgnoreCase("hippocampus"))
+            cmoId = dao.getTermByTermName("hippocampus proper ribonucleic acid composition measurement","CMO");
         else
             cmoId = dao.getTermByTermName(term,"CMO");
 

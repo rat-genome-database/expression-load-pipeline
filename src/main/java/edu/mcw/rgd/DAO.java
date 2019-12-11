@@ -38,10 +38,16 @@ public class DAO extends AbstractDAO {
 
 
     public Sample getSample(Sample sample) throws Exception{
-        String sql = "Select * from Sample where number_of_animals = "+sample.getNumberOfAnimals()+" and tissue_ont_id = '"+sample.getTissueAccId()+ "' and strain_ont_id";
+        String sql = "Select * from Sample where number_of_animals = "+sample.getNumberOfAnimals()+" and strain_ont_id";
+
+
         if(sample.getStrainAccId() != null)
             sql += "= '"+sample.getStrainAccId()+"'";
         else sql += " is null";
+
+        if(sample.getTissueAccId() != null)
+            sql += " and tissue_ont_id = '"+sample.getTissueAccId()+ "'";
+        else sql += " and tissue_ont_id is null";
 
         if(sample.getCellTypeAccId() != null)
             sql += " and cell_type_ont_id = '"+sample.getCellTypeAccId()+"'";
@@ -91,7 +97,10 @@ public class DAO extends AbstractDAO {
     public void updateBioSampleId(int sampleId,Sample sample) throws Exception{
 
         Sample s = getSample(sample);
-        String sql = "update Sample set biosample_id = '" +s.getBioSampleId() + ";" + sample.getBioSampleId()+ "' where sample_id = "+sampleId;
+        String sql;
+        if(s.getBioSampleId() != null) {
+            sql  = "update Sample set biosample_id = '" + s.getBioSampleId() + ";" + sample.getBioSampleId() + "' where sample_id = " + sampleId;
+        } else sql = "update Sample set biosample_id = '" + sample.getBioSampleId() + "' where sample_id = " + sampleId;
         this.update(sql);
 
     }
