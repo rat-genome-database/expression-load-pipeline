@@ -99,9 +99,9 @@ public class DAO extends AbstractDAO {
     }
 
     public int getRGDIdsByXdbId(int xdbKey, String ensembleId) throws Exception{
-        List<RgdId> rgdIds = xdbIdDAO.getRGDIdsByXdbId(xdbKey,ensembleId);
-        if(rgdIds == null || rgdIds.isEmpty())
+        List<Gene> genes = xdbIdDAO.getActiveGenesByXdbId(xdbKey,ensembleId);
+        if(genes == null || genes.isEmpty())
             return 0;
-        else return rgdIds.get(0).getRgdId();
+        else return genes.get(0).getRgdId();
     }
 }
