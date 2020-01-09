@@ -37,8 +37,40 @@ public class DAO extends AbstractDAO {
 
     public int getSampleId(Sample sample) throws Exception{
 
-        String sql = "Select * from Sample where age_days_from_dob_high_bound = "+sample.getAgeDaysFromHighBound()+ " and age_days_from_dob_low_bound = "+sample.getAgeDaysFromLowBound()+ " and" +
-                " number_of_animals = "+sample.getNumberOfAnimals()+" and sex='" + sample.getSex()+"' and strain_ont_id = '"+sample.getStrainAccId()+"' and tissue_ont_id = '"+sample.getTissueAccId()+"'";
+        String sql = "Select * from Sample where number_of_animals = "+sample.getNumberOfAnimals()+" and strain_ont_id";
+
+
+        if(sample.getStrainAccId() != null)
+            sql += "= '"+sample.getStrainAccId()+"'";
+        else sql += " is null";
+
+        if(sample.getTissueAccId() != null)
+            sql += " and tissue_ont_id = '"+sample.getTissueAccId()+ "'";
+        else sql += " and tissue_ont_id is null";
+
+        if(sample.getCellTypeAccId() != null)
+            sql += " and cell_type_ont_id = '"+sample.getCellTypeAccId()+"'";
+        else sql += " and cell_type_ont_id is null";
+
+
+        if(sample.getSex() != null)
+            sql += " and sex='" + sample.getSex() + "'";
+        else sql += " and sex is null";
+
+        if(sample.getAgeDaysFromHighBound() != null)
+            sql += " and age_days_from_dob_high_bound = "+sample.getAgeDaysFromHighBound();
+        else sql += " and age_days_from_dob_high_bound is null";
+
+        if(sample.getAgeDaysFromLowBound() != null)
+            sql += " and age_days_from_dob_low_bound = "+sample.getAgeDaysFromLowBound();
+        else sql += " and age_days_from_dob_high_bound is null";
+
+        if(sample.getNotes() != null && !sample.getNotes().isEmpty()) {
+            String notes = sample.getNotes();
+            notes = notes.replaceAll("'","''");
+            sql += " and dbms_lob.compare(sample_notes, '" + notes + "') = 0";
+        }
+		
         SampleQuery sq = new SampleQuery(this.getDataSource(), sql);
         List<Sample> samples = sq.execute();
         if(samples == null || samples.isEmpty())
