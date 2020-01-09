@@ -5,6 +5,7 @@ import edu.mcw.rgd.dao.impl.*;
 import edu.mcw.rgd.dao.spring.*;
 import edu.mcw.rgd.datamodel.MappedOrtholog;
 import edu.mcw.rgd.datamodel.RgdId;
+import edu.mcw.rgd.datamodel.Gene;
 import edu.mcw.rgd.datamodel.ontologyx.Term;
 import edu.mcw.rgd.datamodel.pheno.Experiment;
 import edu.mcw.rgd.datamodel.pheno.GeneExpressionRecord;
