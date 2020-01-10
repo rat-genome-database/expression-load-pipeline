@@ -35,8 +35,7 @@ public class DAO extends AbstractDAO {
     }
 
 
-    public int getSampleId(Sample sample) throws Exception{
-
+    public Sample getSample(Sample sample) throws Exception{
         String sql = "Select * from Sample where number_of_animals = "+sample.getNumberOfAnimals()+" and strain_ont_id";
 
 
@@ -74,10 +73,28 @@ public class DAO extends AbstractDAO {
         SampleQuery sq = new SampleQuery(this.getDataSource(), sql);
         List<Sample> samples = sq.execute();
         if(samples == null || samples.isEmpty())
-            return 0;
-        else return samples.get(0).getId();
+            return null;
+        else return samples.get(0);
     }
+    public Sample getSampleFromBioSampleId(Sample sample) throws Exception{
+        String sql = "Select * from Sample where biosample_id like '%"+sample.getBioSampleId()+"%'";
 
+        SampleQuery sq = new SampleQuery(this.getDataSource(), sql);
+        List<Sample> samples = sq.execute();
+        if(samples == null || samples.isEmpty())
+            return null;
+        else return samples.get(0);
+    }
+    public void updateBioSampleId(int sampleId,Sample sample) throws Exception{
+
+        Sample s = getSample(sample);
+        String sql;
+        if(s.getBioSampleId() != null) {
+            sql  = "update Sample set biosample_id = '" + s.getBioSampleId() + ";" + sample.getBioSampleId() + "' where sample_id = " + sampleId;
+        } else sql = "update Sample set biosample_id = '" + sample.getBioSampleId() + "' where sample_id = " + sampleId;
+        this.update(sql);
+
+    }
     public int getExperimentId(Experiment e) throws Exception{
 
         String sql = "Select * from Experiment where experiment_name='"+e.getName()+"' and study_id="+e.getStudyId()+" and trait_ont_id='"+e.getTraitOntId()+"'";
@@ -136,5 +153,16 @@ public class DAO extends AbstractDAO {
         if(genes == null || genes.isEmpty())
             return 0;
         else return genes.get(0).getRgdId();
+    }
+
+    public void updateExpressionLevel() throws Exception{
+        String sql = "update gene_expression_values set expression_level= 'below cutoff' where expression_level is null and expression_value < 0.5";
+        this.update(sql);
+        sql = "update gene_expression_values set expression_level= 'low' where expression_level is null and expression_value between 0.5 and 10";
+        this.update(sql);
+        sql = "update gene_expression_values set expression_level= 'medium' where expression_level is null and expression_value between 11 and 1000";
+        this.update(sql);
+        sql = "update gene_expression_values set expression_level= 'high' where expression_level is null and expression_value > 1000";
+        this.update(sql);
     }
 }
