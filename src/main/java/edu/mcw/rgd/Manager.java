@@ -334,8 +334,8 @@ public class Manager {
         logSummary.info("Samples Inserted : " + samples.size());
         logSummary.info("Gene Expression Records Inserted : " + geneExpressionRecords.size());
        reader.close();
-    //   loadTPMValues();
-    //  dao.updateExpressionLevel();
+      loadTPMValues();
+      dao.updateExpressionLevel();
     }
 
     public String getNotes(String[] cols, Map<String,Integer> headerIndex){
