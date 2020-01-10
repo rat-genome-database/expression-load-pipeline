@@ -158,8 +158,6 @@ public class Manager {
         BufferedReader reader=new BufferedReader(fileReader);
 
 
-
-
         String line = null;
         Map<String,Integer> headerIndex = new HashMap<>();
         int experimentId = 0;
@@ -334,7 +332,7 @@ public class Manager {
         logSummary.info("Samples Inserted : " + samples.size());
         logSummary.info("Gene Expression Records Inserted : " + geneExpressionRecords.size());
        reader.close();
-      loadTPMValues();
+       loadTPMValues();
       dao.updateExpressionLevel();
     }
 

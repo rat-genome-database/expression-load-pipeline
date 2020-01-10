@@ -11,8 +11,11 @@ import edu.mcw.rgd.datamodel.pheno.Experiment;
 import edu.mcw.rgd.datamodel.pheno.GeneExpressionRecord;
 import edu.mcw.rgd.datamodel.pheno.GeneExpressionRecordValue;
 import edu.mcw.rgd.datamodel.pheno.Sample;
+import edu.mcw.rgd.process.Utils;
 import edu.mcw.rgd.process.mapping.MapManager;
+import org.springframework.jdbc.core.SqlParameter;
 
+import java.sql.Types;
 import java.util.List;
 
 
@@ -69,8 +72,13 @@ public class DAO extends AbstractDAO {
             notes = notes.replaceAll("'","''");
             sql += " and dbms_lob.compare(sample_notes, '" + notes + "') = 0";
         }
-		
+
+
         SampleQuery sq = new SampleQuery(this.getDataSource(), sql);
+
+
+       System.out.println(sql);
+
         List<Sample> samples = sq.execute();
         if(samples == null || samples.isEmpty())
             return null;
@@ -79,6 +87,8 @@ public class DAO extends AbstractDAO {
     public Sample getSampleFromBioSampleId(Sample sample) throws Exception{
         String sql = "Select * from Sample where biosample_id like '%"+sample.getBioSampleId()+"%'";
 
+
+        System.out.println(sql);
         SampleQuery sq = new SampleQuery(this.getDataSource(), sql);
         List<Sample> samples = sq.execute();
         if(samples == null || samples.isEmpty())
@@ -97,7 +107,13 @@ public class DAO extends AbstractDAO {
     }
     public int getExperimentId(Experiment e) throws Exception{
 
-        String sql = "Select * from Experiment where experiment_name='"+e.getName()+"' and study_id="+e.getStudyId()+" and trait_ont_id='"+e.getTraitOntId()+"'";
+        String sql = "Select * from Experiment where experiment_name='"+e.getName()+"' and study_id="+e.getStudyId();
+
+        if(e.getTraitOntId() != null)
+            sql += " and trait_ont_id='"+e.getTraitOntId()+"'";
+        else sql += " and trait_ont_id is null";
+
+        System.out.println(sql);
         ExperimentQuery sq = new ExperimentQuery(this.getDataSource(), sql);
         List<Experiment> experiments = sq.execute();
         if(experiments == null || experiments.isEmpty())
