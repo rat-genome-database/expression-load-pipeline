@@ -127,8 +127,8 @@ public class Manager {
                                     geneExprValueId = dao.getGeneExprValueId(value);
                                     if (geneExprValueId == 0) {
                                         geneExprValueId = dao.insertGeneExpressionRecordValue(value);
-                                        log.info("Inserted Gene Expression Record Value :" + geneExprValueId);
-                                        System.out.println("Inserted Gene Expression Record Value :" + geneExprValueId);
+                                        //log.info("Inserted Gene Expression Record Value :" + geneExprValueId);
+                                        //System.out.println("Inserted Gene Expression Record Value :" + geneExprValueId);
                                     }
                                     value.setId(geneExprValueId);
                                 }
@@ -192,8 +192,10 @@ public class Manager {
                         if (headerIndex.containsKey("Sample Characteristic[age]") || headerIndex.containsKey("Sample Characteristic[developmental stage]")) {
                             ageHigh = getAgeHigh(cols, headerIndex);
                             ageLow = getAgeLow(cols, headerIndex);
-                            sample.setAgeDaysFromHighBound(ageHigh);
-                            sample.setAgeDaysFromLowBound(ageLow);
+                            if(ageHigh != 0)
+                                sample.setAgeDaysFromHighBound(ageHigh);
+                            if(ageLow != 0)
+                                sample.setAgeDaysFromLowBound(ageLow);
                         } else {
                             sample.setAgeDaysFromHighBound(null);
                             sample.setAgeDaysFromLowBound(null);
@@ -332,8 +334,8 @@ public class Manager {
         logSummary.info("Samples Inserted : " + samples.size());
         logSummary.info("Gene Expression Records Inserted : " + geneExpressionRecords.size());
        reader.close();
-       loadTPMValues();
-      dao.updateExpressionLevel();
+    loadTPMValues();
+     dao.updateExpressionLevel();
     }
 
     public String getNotes(String[] cols, Map<String,Integer> headerIndex){
@@ -415,30 +417,35 @@ public class Manager {
             }
             return ageHigh;
         }
-        String age = cols[headerIndex.get("Sample Characteristic[age]")];
+        String age;
+        if(headerIndex.containsKey("Sample Characteristic[age]")) {
+           age = cols[headerIndex.get("Sample Characteristic[age]")];
+        } else if(headerIndex.containsKey("Sample Characteristic[gestational age]"))
+            age = cols[headerIndex.get("Sample Characteristic[gestational age]")];
+        else return 0;
         if (age.contains("week")) {
-            ageHigh = Integer.valueOf(age.split("week")[0].trim());
-            ageHigh = ageHigh * 7;
-        }else if (age.contains("month")) {
-            ageHigh = Integer.valueOf(age.split("month")[0].trim());
-            ageHigh = ageHigh * 30;
-        }
-        else if (age.contains("day")) {
-            if (cols[headerIndex.get("Sample Characteristic[developmental stage]")].equalsIgnoreCase("embryo")) {
-                ageHigh = Integer.valueOf(age.split("day")[0].trim()) - 21;
-            } else if (cols[headerIndex.get("Sample Characteristic[developmental stage]")].equalsIgnoreCase("postnatal")) {
-                ageHigh = Integer.valueOf(age.split("day")[0].trim());
+                ageHigh = Integer.valueOf(age.split("week")[0].trim());
+                ageHigh = ageHigh * 7;
+            } else if (age.contains("month")) {
+                ageHigh = Integer.valueOf(age.split("month")[0].trim());
+                ageHigh = ageHigh * 30;
+            } else if (age.contains("day")) {
+                if (cols[headerIndex.get("Sample Characteristic[developmental stage]")].equalsIgnoreCase("embryo")) {
+                    ageHigh = Integer.valueOf(age.split("day")[0].trim()) - 21;
+                } else if (cols[headerIndex.get("Sample Characteristic[developmental stage]")].equalsIgnoreCase("postnatal")) {
+                    ageHigh = Integer.valueOf(age.split("day")[0].trim());
+                }
             }
-        }
-        if (age.contains("year")) {
-            String ageSplit = age.split("year")[0].trim();
-            if(ageSplit.contains("to")) {
-               String[] ages  = ageSplit.split("to");
-               ageHigh = Integer.valueOf(ages[1].trim());
-            }else ageHigh = Integer.valueOf(ageSplit);
+            if (age.contains("year")) {
+                String ageSplit = age.split("year")[0].trim();
+                if (ageSplit.contains("to")) {
+                    String[] ages = ageSplit.split("to");
+                    ageHigh = Integer.valueOf(ages[1].trim());
+                } else ageHigh = Integer.valueOf(ageSplit);
 
-            ageHigh = ageHigh * 365;
-        }
+                ageHigh = ageHigh * 365;
+            }
+
         return ageHigh;
     }
     public int getAgeLow(String[] cols, Map<String,Integer> headerIndex) {
@@ -491,7 +498,12 @@ public class Manager {
             }
             return ageLow;
         }
-        String age = cols[headerIndex.get("Sample Characteristic[age]")];
+        String age;
+        if(headerIndex.containsKey("Sample Characteristic[age]")) {
+            age = cols[headerIndex.get("Sample Characteristic[age]")];
+        } else if(headerIndex.containsKey("Sample Characteristic[gestational age]"))
+            age = cols[headerIndex.get("Sample Characteristic[gestational age]")];
+        else return 0;
         if (age.contains("week")) {
             ageLow = Integer.valueOf(age.split("week")[0].trim());
             ageLow = ageLow * 7;
@@ -553,7 +565,7 @@ public class Manager {
         }else if(part.equalsIgnoreCase("duodenum")){
             exprName = "small intestine morphology trait";
         }else if(part.equalsIgnoreCase("endometrium")){
-            exprName = "uterus ribonucleic acid amount";
+            exprName = "uterus molecular composition trait";
         }else if(part.equalsIgnoreCase("fallopian tube")){
             exprName = "oviduct morphology trait";
         }else if(part.equalsIgnoreCase("ectocervix") || part.equalsIgnoreCase("endocervix") || part.equalsIgnoreCase("uterine cervix") || part.equalsIgnoreCase("vagina")
