@@ -1,36 +1,14 @@
 <!DOCTYPE beans PUBLIC "-//SPRING//DTD BEAN//EN" "http://www.springframework.org/dtd/spring-beans.dtd">
 <beans>
     <bean id="manager" class="edu.mcw.rgd.Manager">
-        <property name="tpmFile" value="/data/E-GEOD-53960/E-GEOD-53960-tpms.tsv"></property>
-        <property name="designFile" value="/data/E-GEOD-53960/E-GEOD-53960-experiment-design"></property>
-        <property name="strainOntIds">
-            <map>
-                <entry key="Holtzman SD" value="RS:0002942"></entry>
-                <entry key="Fisher 344" value="RS:0004581"></entry>
-                <entry key="Sprague-Dawley" value="RS:0000681"></entry>
-                <entry key="F344/Cr1" value="RS:0000215"></entry>
-                <entry key="BN/SsNHsd" value="RS:0000155"></entry>
-            </map>
-        </property>
-        <property name="studyId" value="3040"></property>
-        <property name="noOfRuns" value="8"></property>
+        <property name="tpmFile" value="E:\\data\\human\\GTEx_Analysis_2017-06-05_v8_RNASeQCv1.1.9_gene_tpm.gct\\GTEx_Analysis_2017-06-05_v8_RNASeQCv1.1.9_gene_tpm.gct"></property>
+        <property name="phenoFile" value="E:\\data\\human\\GTEx_Analysis_2017-06-05_v8_RNASeQCv1.1.9_gene_tpm.gct\\GTEx_Analysis_v8_Annotations_SubjectPhenotypesDS.txt"></property>
+        <property name="sampleFile" value="E:\\data\\human\\GTEx_Analysis_2017-06-05_v8_RNASeQCv1.1.9_gene_tpm.gct\\GTEx_Analysis_v8_Annotations_SampleAttributesDS.txt"></property>
+        <property name="studyId" value="3065"></property>
 
-        <property name="headerFormat">
-            <map>
-                <entry key="numberofValues" value="3"></entry>
-                <entry key="delimiter" value=","></entry>
-                <entry key="values" value="headerVal"></entry>
 
-            </map>
-        </property>
-        <property name="headerVal">
-            <list>
-                <value>Sample Characteristic[sex]</value>
-                <value>Sample Characteristic[developmental stage]</value>
-                <value>Sample Characteristic[organism part]</value>
-            </list>
-        </property>
-        <property name="mapKey" value="360"></property>
+
+        <property name="mapKey" value="38"></property>
         <property name="expressionUnit" value="TPM"></property>
     </bean>
     <bean id="dao" class="edu.mcw.rgd.DAO"></bean>

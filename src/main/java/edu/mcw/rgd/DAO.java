@@ -83,11 +83,8 @@ public class DAO extends AbstractDAO {
             return null;
         else return samples.get(0);
     }
-    public Sample getSampleFromBioSampleId(Sample sample) throws Exception{
-        String sql = "Select * from Sample where biosample_id like '%"+sample.getBioSampleId()+"%'";
-
-
-        System.out.println(sql);
+    public Sample getSampleFromBioSampleId(String id) throws Exception{
+        String sql = "Select * from Sample where biosample_id like '%"+id+"%'";
         SampleQuery sq = new SampleQuery(this.getDataSource(), sql);
         List<Sample> samples = sq.execute();
         if(samples == null || samples.isEmpty())
@@ -95,22 +92,16 @@ public class DAO extends AbstractDAO {
         else return samples.get(0);
     }
     public void updateBioSampleId(int sampleId,Sample sample) throws Exception{
-
-        Sample s = getSample(sample);
+        System.out.println(sample.getTissueAccId());
         String sql;
-        if(s.getBioSampleId() != null) {
-            sql  = "update Sample set biosample_id = '" + s.getBioSampleId() + ";" + sample.getBioSampleId() + "' where sample_id = " + sampleId;
-        } else sql = "update Sample set biosample_id = '" + sample.getBioSampleId() + "' where sample_id = " + sampleId;
+         sql = "update Sample set tissue_ont_id = '" + sample.getTissueAccId() + "' where sample_id = " + sampleId;
         this.update(sql);
 
     }
     public int getExperimentId(Experiment e) throws Exception{
 
-        String sql = "Select * from Experiment where experiment_name='"+e.getName()+"' and study_id="+e.getStudyId();
+        String sql = "Select * from Experiment where experiment_name='"+e.getName()+"' and study_id="+e.getStudyId()+" and trait_ont_id='"+e.getTraitOntId()+"'";
 
-        if(e.getTraitOntId() != null)
-            sql += " and trait_ont_id='"+e.getTraitOntId()+"'";
-        else sql += " and trait_ont_id is null";
 
         System.out.println(sql);
         ExperimentQuery sq = new ExperimentQuery(this.getDataSource(), sql);
@@ -130,6 +121,15 @@ public class DAO extends AbstractDAO {
         else return records.get(0).getId();
     }
 
+    public int getGeneExprRecordId(Sample s) throws Exception{
+
+        String sql = "Select * from Gene_expression_exp_record where sample_id="+s.getId();
+        GeneExpressionRecordQuery sq = new GeneExpressionRecordQuery(this.getDataSource(), sql);
+        List<GeneExpressionRecord> records = sq.execute();
+        if(records == null || records.isEmpty())
+            return 0;
+        else return records.get(0).getId();
+    }
     public int getGeneExprValueId(GeneExpressionRecordValue g) throws Exception{
 
         String sql = "Select * from Gene_expression_values where expressed_object_rgd_id="+g.getExpressedObjectRgdId()+" and expression_measurement_ont_id='"+g.getExpressionMeasurementAccId()+"' and gene_expression_exp_record_id="+g.getGeneExpressionRecordId()+

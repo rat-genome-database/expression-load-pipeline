@@ -5,6 +5,7 @@ import edu.mcw.rgd.datamodel.pheno.Study;
 import org.springframework.jdbc.object.MappingSqlQuery;
 
 import javax.sql.DataSource;
+import java.sql.Clob;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
@@ -21,7 +22,10 @@ public class SampleQuery extends MappingSqlQuery {
         sample.setAgeDaysFromHighBound(rs.getInt("age_days_from_dob_high_bound"));
         sample.setAgeDaysFromLowBound(rs.getInt("age_days_from_dob_low_bound"));
         sample.setNumberOfAnimals(rs.getInt("number_of_animals"));
-        sample.setNotes(rs.getString("sample_notes"));
+        Clob clob = rs.getClob("sample_notes");
+        if(clob != null)
+            sample.setNotes(clob.toString());
+        else sample.setNotes(null);
         sample.setSex(rs.getString("sex"));
         sample.setStrainAccId(rs.getString("strain_ont_id"));
         sample.setTissueAccId(rs.getString("tissue_ont_id"));
