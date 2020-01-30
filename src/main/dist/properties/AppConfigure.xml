@@ -1,9 +1,9 @@
 <!DOCTYPE beans PUBLIC "-//SPRING//DTD BEAN//EN" "http://www.springframework.org/dtd/spring-beans.dtd">
 <beans>
     <bean id="manager" class="edu.mcw.rgd.Manager">
-        <property name="tpmFile" value="E:\\data\\human\\GTEx_Analysis_2017-06-05_v8_RNASeQCv1.1.9_gene_tpm.gct\\GTEx_Analysis_2017-06-05_v8_RNASeQCv1.1.9_gene_tpm.gct"></property>
-        <property name="phenoFile" value="E:\\data\\human\\GTEx_Analysis_2017-06-05_v8_RNASeQCv1.1.9_gene_tpm.gct\\GTEx_Analysis_v8_Annotations_SubjectPhenotypesDS.txt"></property>
-        <property name="sampleFile" value="E:\\data\\human\\GTEx_Analysis_2017-06-05_v8_RNASeQCv1.1.9_gene_tpm.gct\\GTEx_Analysis_v8_Annotations_SampleAttributesDS.txt"></property>
+        <property name="tpmFile" value="data/human/GTEx_Analysis_2017-06-05_v8_RNASeQCv1.1.9_gene_tpm.gct"></property>
+        <property name="phenoFile" value="data/human/GTEx_Analysis_v8_Annotations_SubjectPhenotypesDS.txt"></property>
+        <property name="sampleFile" value="data/human/GTEx_Analysis_v8_Annotations_SampleAttributesDS.txt"></property>
         <property name="studyId" value="3065"></property>
 
 
