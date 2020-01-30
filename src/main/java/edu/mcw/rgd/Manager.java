@@ -47,7 +47,8 @@ public class Manager {
     private String sampleFile;
     private boolean firstRun = true;
 
-
+    private List<GeneExpressionRecordValue> loaded = new ArrayList<>();
+    private List<Integer> loadedRgdIds = new ArrayList<>();
     private Map<String,String> cmoIDs = new HashMap<>();
 
 
@@ -76,14 +77,11 @@ public class Manager {
         FileReader valReader = new FileReader(getTpmFile());
         BufferedReader tpmsReader = new BufferedReader(valReader);
         List<String> samples = new ArrayList<>();
-        HashMap<String,GeneExpressionRecordValue> sampleData = new HashMap<>();
-        Map<Integer,HashMap> data = new HashMap<>();
         String tpmsLine = null;
-        int count  = 0;
-        int start = 0;
+        loadedRgdIds = dao.getExistingIds(studyId);
+
         while(( tpmsLine = tpmsReader.readLine() ) != null) {
             if (tpmsLine.startsWith("5") || tpmsLine.startsWith("#")) {
-                start++;
                 continue;
             }else if (tpmsLine.startsWith("Name")) {
                 String[] cols = tpmsLine.split("[\t]", -1);
@@ -105,7 +103,7 @@ public class Manager {
                     ensembleID = ids[0];
                 }else ensembleID = cols[0];
                 int rgdId = dao.getRGDIdsByXdbId(20, ensembleID);
-                if (rgdId != 0) {
+                if (rgdId != 0 && !loadedRgdIds.contains(rgdId)) {
                     int i = 0;
                     for (String col : cols) {
                         if (!col.isEmpty()) {
@@ -128,7 +126,7 @@ public class Manager {
                                 rec.setMapKey(getMapKey());
                                 int geneExprValueId = dao.getGeneExprValueId(rec);
                                 if (geneExprValueId == 0 && rec.getExpressionValue() != 0) {
-                                    geneExprValueId = dao.insertGeneExpressionRecordValue(rec);
+                                    loaded.add(rec);
                                     //log.info("Inserted Gene Expression Record Value :" + geneExprValueId);
                                     System.out.println("Inserted Gene Expression Record Value :" + geneExprValueId);
                                 }
@@ -139,16 +137,18 @@ public class Manager {
 
                         i++;
                     }
+
+                    dao.insertGeneExpressionRecordValues(loaded);
+                    loaded.clear();
                     logSummary.info("Completed rgdId " + rgdId + " " + cols[1]);
                     System.out.println("Completed rgdId " + rgdId + " " + cols[1]);
-                    }else{
-                        count++;
-
                     }
             }
         }
         tpmsReader.close();
     }
+
+
     public void createSamplesExperimentsGeneExpressionRecord() throws Exception{
 
 

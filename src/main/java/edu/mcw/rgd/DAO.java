@@ -13,6 +13,7 @@ import edu.mcw.rgd.datamodel.pheno.Sample;
 import edu.mcw.rgd.process.Utils;
 import edu.mcw.rgd.process.mapping.MapManager;
 import org.springframework.jdbc.core.SqlParameter;
+import org.springframework.jdbc.object.BatchSqlUpdate;
 
 import java.sql.Types;
 import java.util.List;
@@ -152,8 +153,25 @@ public class DAO extends AbstractDAO {
         return gedao.insertGeneExpressionRecord(g);
     }
 
-    public int insertGeneExpressionRecordValue(GeneExpressionRecordValue g) throws Exception{
-        return gedao.insertGeneExpressionRecordValue(g);
+    public List<Integer> getExistingIds(int studyId) throws Exception{
+     String sql = "select (distinct(expressed_object_rgd_id)) from gene_expression_values where gene_expression_exp_record_id between 4305 and 21686";
+        return IntListQuery.execute(this, sql);
+    }
+    public void insertGeneExpressionRecordValues(List<GeneExpressionRecordValue> records) throws Exception{
+    String sql = "INSERT INTO gene_expression_values (gene_expression_value_id, expressed_object_rgd_id"
+                +",expression_measurement_ont_id, expression_value_notes, gene_expression_exp_record_id"
+                +",expression_value, expression_unit, map_key) VALUES(?,?,?,?,?,?,?,?)";
+        BatchSqlUpdate su = new BatchSqlUpdate(this.getDataSource(), sql, new int[]{Types.VARCHAR, Types.INTEGER,
+                Types.VARCHAR, Types.VARCHAR,Types.INTEGER, Types.DOUBLE, Types.VARCHAR, Types.INTEGER, },10000);
+        su.compile();
+
+        for(GeneExpressionRecordValue v:records) {
+            int id = getNextKeyFromSequence("gene_expression_values_seq");
+            v.setId(id);
+            su.update(id, v.getExpressedObjectRgdId(), v.getExpressionMeasurementAccId(), v.getNotes(),
+                    v.getGeneExpressionRecordId(), v.getExpressionValue(), v.getExpressionUnit(), v.getMapKey());
+        }
+        su.flush();
     }
 
     public String getTermByTermName(String term,String ontID) throws Exception {
