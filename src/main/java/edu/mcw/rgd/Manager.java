@@ -121,11 +121,8 @@ public class Manager {
 
                                 rec.setGeneExpressionRecordId(geneExpressionRecords.get(s).getId());
                                 rec.setMapKey(getMapKey());
-                                int geneExprValueId = dao.getGeneExprValueId(rec);
-                                if (geneExprValueId == 0 && rec.getExpressionValue() != 0) {
+                                if ( rec.getExpressionValue() != 0) {
                                     loaded.add(rec);
-                                    //log.info("Inserted Gene Expression Record Value :" + geneExprValueId);
-                                    System.out.println("Inserted Gene Expression Record Value :" + geneExprValueId);
                                 }
 
                             }
