@@ -118,11 +118,8 @@ public class Manager {
 
                                 rec.setExpressionUnit(getExpressionUnit());
                                 rec.setExpressionMeasurementAccId(cmoIDs.get(s));
-                                Sample sample = dao.getSampleFromBioSampleId(s);
-                                int geneExprId = dao.getGeneExprRecordId(sample);
-                                if(firstRun)
-                                    rec.setGeneExpressionRecordId(geneExpressionRecords.get(s).getId());
-                                else rec.setGeneExpressionRecordId(geneExprId);
+
+                                rec.setGeneExpressionRecordId(geneExpressionRecords.get(s).getId());
                                 rec.setMapKey(getMapKey());
                                 int geneExprValueId = dao.getGeneExprValueId(rec);
                                 if (geneExprValueId == 0 && rec.getExpressionValue() != 0) {

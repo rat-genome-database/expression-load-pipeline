@@ -154,7 +154,7 @@ public class DAO extends AbstractDAO {
     }
 
     public List<Integer> getExistingIds(int studyId) throws Exception{
-     String sql = "select (distinct(expressed_object_rgd_id)) from gene_expression_values where gene_expression_exp_record_id between 4305 and 21686";
+     String sql = "select distinct(expressed_object_rgd_id) from gene_expression_values where gene_expression_exp_record_id between 4305 and 21686";
         return IntListQuery.execute(this, sql);
     }
     public void insertGeneExpressionRecordValues(List<GeneExpressionRecordValue> records) throws Exception{
