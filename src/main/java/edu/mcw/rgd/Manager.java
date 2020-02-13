@@ -5,7 +5,7 @@ import edu.mcw.rgd.dao.impl.GeneExpressionDAO;
 import edu.mcw.rgd.dao.impl.OntologyXDAO;
 import edu.mcw.rgd.dao.impl.PhenominerDAO;
 import edu.mcw.rgd.dao.impl.XdbIdDAO;
-import edu.mcw.rgd.datamodel.RgdId;
+import edu.mcw.rgd.datamodel.*;
 import edu.mcw.rgd.datamodel.ontologyx.Term;
 import edu.mcw.rgd.datamodel.pheno.Experiment;
 import edu.mcw.rgd.datamodel.pheno.GeneExpressionRecord;
@@ -20,6 +20,7 @@ import org.springframework.core.io.FileSystemResource;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.util.*;
+import java.util.Map;
 
 public class Manager {
 
@@ -63,7 +64,15 @@ public class Manager {
         Manager manager = (Manager) (bf.getBean("manager"));
 
         try {
-            manager.createSamplesExperimentsGeneExpressionRecord();
+            for( int i=0; i<args.length; i++ ) {
+                switch(args[i]) {
+                    case "--updateCounts": {
+                        manager.updateCounts();
+                        return;
+                    }
+                }
+            }
+           // manager.createSamplesExperimentsGeneExpressionRecord();
         } catch (Exception e) {
             manager.log.error(e);
             throw e;
@@ -127,8 +136,8 @@ public class Manager {
                                     geneExprValueId = dao.getGeneExprValueId(value);
                                     if (geneExprValueId == 0) {
                                         geneExprValueId = dao.insertGeneExpressionRecordValue(value);
-                                        log.info("Inserted Gene Expression Record Value :" + geneExprValueId);
-                                        System.out.println("Inserted Gene Expression Record Value :" + geneExprValueId);
+                                        //log.info("Inserted Gene Expression Record Value :" + geneExprValueId);
+                                        //System.out.println("Inserted Gene Expression Record Value :" + geneExprValueId);
                                     }
                                     value.setId(geneExprValueId);
                                 }
@@ -177,30 +186,26 @@ public class Manager {
                 String sex = null;
                 int ageHigh = 0;
                 int ageLow = 0;
-             /*   if(!headerVal.contains("Sample Characteristic[sex]") && noOfRuns == 0 ) {
-                    sample.setSex("manual");
-                    sample.setAgeDaysFromHighBound(null);
-                    sample.setAgeDaysFromLowBound(null);
-                }
-                else {
-            */        if (headerIndex.containsKey("Sample Characteristic[sex]")) {
+                  if (headerIndex.containsKey("Sample Characteristic[sex]")) {
                     sex = cols[headerIndex.get("Sample Characteristic[sex]")];
                     if (sex.equalsIgnoreCase("unknown") || sex.equalsIgnoreCase("not available"))
                         sex = "not specified";
                     sample.setSex(sex);
                 }else sample.setSex("not specified");
-                        if (headerIndex.containsKey("Sample Characteristic[age]") || headerIndex.containsKey("Sample Characteristic[developmental stage]")) {
+                        if ((headerIndex.containsKey("Sample Characteristic[age]") || headerIndex.containsKey("Sample Characteristic[developmental stage]")) &&  firstRun == true) {
                             ageHigh = getAgeHigh(cols, headerIndex);
                             ageLow = getAgeLow(cols, headerIndex);
-                            sample.setAgeDaysFromHighBound(ageHigh);
-                            sample.setAgeDaysFromLowBound(ageLow);
+                            if(ageHigh != 0)
+                                sample.setAgeDaysFromHighBound(ageHigh);
+                            if(ageLow != 0)
+                                sample.setAgeDaysFromLowBound(ageLow);
                         } else {
                             sample.setAgeDaysFromHighBound(null);
                             sample.setAgeDaysFromLowBound(null);
                         }
 
 
-            //    }
+
                 //Strian doesnt exist for human it exists for rat
                 if(headerIndex.containsKey("Sample Characteristic[strain]")) {
                     String strain = cols[headerIndex.get("Sample Characteristic[strain]")];
@@ -332,8 +337,8 @@ public class Manager {
         logSummary.info("Samples Inserted : " + samples.size());
         logSummary.info("Gene Expression Records Inserted : " + geneExpressionRecords.size());
        reader.close();
-       loadTPMValues();
-      dao.updateExpressionLevel();
+ loadTPMValues();
+    dao.updateExpressionLevel();
     }
 
     public String getNotes(String[] cols, Map<String,Integer> headerIndex){
@@ -415,30 +420,35 @@ public class Manager {
             }
             return ageHigh;
         }
-        String age = cols[headerIndex.get("Sample Characteristic[age]")];
+        String age;
+        if(headerIndex.containsKey("Sample Characteristic[age]")) {
+           age = cols[headerIndex.get("Sample Characteristic[age]")];
+        } else if(headerIndex.containsKey("Sample Characteristic[gestational age]"))
+            age = cols[headerIndex.get("Sample Characteristic[gestational age]")];
+        else return 0;
         if (age.contains("week")) {
-            ageHigh = Integer.valueOf(age.split("week")[0].trim());
-            ageHigh = ageHigh * 7;
-        }else if (age.contains("month")) {
-            ageHigh = Integer.valueOf(age.split("month")[0].trim());
-            ageHigh = ageHigh * 30;
-        }
-        else if (age.contains("day")) {
-            if (cols[headerIndex.get("Sample Characteristic[developmental stage]")].equalsIgnoreCase("embryo")) {
-                ageHigh = Integer.valueOf(age.split("day")[0].trim()) - 21;
-            } else if (cols[headerIndex.get("Sample Characteristic[developmental stage]")].equalsIgnoreCase("postnatal")) {
-                ageHigh = Integer.valueOf(age.split("day")[0].trim());
+                ageHigh = Integer.valueOf(age.split("week")[0].trim());
+                ageHigh = ageHigh * 7;
+            } else if (age.contains("month")) {
+                ageHigh = Integer.valueOf(age.split("month")[0].trim());
+                ageHigh = ageHigh * 30;
+            } else if (age.contains("day")) {
+                if (cols[headerIndex.get("Sample Characteristic[developmental stage]")].equalsIgnoreCase("embryo")) {
+                    ageHigh = Integer.valueOf(age.split("day")[0].trim()) - 21;
+                } else if (cols[headerIndex.get("Sample Characteristic[developmental stage]")].equalsIgnoreCase("postnatal")) {
+                    ageHigh = Integer.valueOf(age.split("day")[0].trim());
+                }
             }
-        }
-        if (age.contains("year")) {
-            String ageSplit = age.split("year")[0].trim();
-            if(ageSplit.contains("to")) {
-               String[] ages  = ageSplit.split("to");
-               ageHigh = Integer.valueOf(ages[1].trim());
-            }else ageHigh = Integer.valueOf(ageSplit);
+            if (age.contains("year")) {
+                String ageSplit = age.split("year")[0].trim();
+                if (ageSplit.contains("to")) {
+                    String[] ages = ageSplit.split("to");
+                    ageHigh = Integer.valueOf(ages[1].trim());
+                } else ageHigh = Integer.valueOf(ageSplit);
 
-            ageHigh = ageHigh * 365;
-        }
+                ageHigh = ageHigh * 365;
+            }
+
         return ageHigh;
     }
     public int getAgeLow(String[] cols, Map<String,Integer> headerIndex) {
@@ -491,7 +501,12 @@ public class Manager {
             }
             return ageLow;
         }
-        String age = cols[headerIndex.get("Sample Characteristic[age]")];
+        String age;
+        if(headerIndex.containsKey("Sample Characteristic[age]")) {
+            age = cols[headerIndex.get("Sample Characteristic[age]")];
+        } else if(headerIndex.containsKey("Sample Characteristic[gestational age]"))
+            age = cols[headerIndex.get("Sample Characteristic[gestational age]")];
+        else return 0;
         if (age.contains("week")) {
             ageLow = Integer.valueOf(age.split("week")[0].trim());
             ageLow = ageLow * 7;
@@ -553,7 +568,7 @@ public class Manager {
         }else if(part.equalsIgnoreCase("duodenum")){
             exprName = "small intestine morphology trait";
         }else if(part.equalsIgnoreCase("endometrium")){
-            exprName = "uterus ribonucleic acid amount";
+            exprName = "uterus molecular composition trait";
         }else if(part.equalsIgnoreCase("fallopian tube")){
             exprName = "oviduct morphology trait";
         }else if(part.equalsIgnoreCase("ectocervix") || part.equalsIgnoreCase("endocervix") || part.equalsIgnoreCase("uterine cervix") || part.equalsIgnoreCase("vagina")
@@ -675,6 +690,58 @@ public class Manager {
             cmoId = dao.getTermByTermName(term,"CMO");
 
         return cmoId;
+    }
+
+    public void updateCounts() throws Exception{
+        List<String> terms = Arrays.asList("UBERON:0005409","UBERON:0005726","UBERON:0001009","UBERON:0000949","UBERON:0002330","UBERON:0002193","UBERON:0002423","UBERON:0002416","UBERON:0007037",
+                "UBERON:0002204","UBERON:0001016","UBERON:0001008","UBERON:0000990","UBERON:0001004","UBERON:0001032","UBERON:0002105","UBERON:0002104","UBERON:0000925","UBERON:0000924",
+                "UBERON:0000926","UBERON:0003104","UBERON:0001013","UBERON:0000026","UBERON:0016887","UBERON:6005023","UBERON:0002539");
+
+
+            for(String term: terms) {
+                HashMap<Integer,Integer> highMap = new HashMap();
+                HashMap<Integer,Integer> lowMap = new HashMap();
+                HashMap<Integer,Integer> mediumMap = new HashMap();
+                HashMap<Integer,Integer> belowMap = new HashMap();
+                int mapKey = 38;
+                List<GeneExpressionRecordValue> values = dao.getGeneExprRecordValuesBySlim("TPM",term,mapKey);
+                System.out.println("Size "+values.size() );
+                for(GeneExpressionRecordValue val:values){
+                    int count = 0;
+                    if(val.getExpressionLevel().equalsIgnoreCase("high")) {
+                        if(highMap.keySet().contains(val.getExpressedObjectRgdId()))
+                            count = highMap.get(val.getExpressedObjectRgdId());
+                        count++;
+                        highMap.put(val.getExpressedObjectRgdId(),count);
+                    }
+                    if(val.getExpressionLevel().equalsIgnoreCase("low")) {
+                        if(lowMap.keySet().contains(val.getExpressedObjectRgdId()))
+                            count = lowMap.get(val.getExpressedObjectRgdId());
+                        count++;
+                        lowMap.put(val.getExpressedObjectRgdId(),count);
+                    }
+                    if(val.getExpressionLevel().equalsIgnoreCase("medium")) {
+                        if(mediumMap.keySet().contains(val.getExpressedObjectRgdId()))
+                            count = mediumMap.get(val.getExpressedObjectRgdId());
+                        count++;
+                        mediumMap.put(val.getExpressedObjectRgdId(),count);
+                    }
+                    if(val.getExpressionLevel().equalsIgnoreCase("below cutoff")) {
+                        if(belowMap.keySet().contains(val.getExpressedObjectRgdId()))
+                            count = belowMap.get(val.getExpressedObjectRgdId());
+                        count++;
+                        belowMap.put(val.getExpressedObjectRgdId(),count);
+                    }
+            }
+
+            System.out.println("Starting insertion for term "+term );
+
+            dao.insertCounts(term,highMap,"high");
+            dao.insertCounts(term,lowMap,"low");
+            dao.insertCounts(term,mediumMap,"medium");
+            dao.insertCounts(term,belowMap,"below cutoff");
+
+            }
     }
 
     public Map getStrainOntIds() {
