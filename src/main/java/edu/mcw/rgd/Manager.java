@@ -579,7 +579,7 @@ public class Manager {
         }else if(part.equalsIgnoreCase("vermiform appendix") || part.equalsIgnoreCase("esophagogastric junction") || part.equalsIgnoreCase("large intestine")
                 || part.equalsIgnoreCase("transverse colon") || part.equalsIgnoreCase("esophagus mucosa") || part.equalsIgnoreCase("esophagus muscularis mucosa")
                 || part.equalsIgnoreCase("greater omentum") || part.equalsIgnoreCase("minor salivary gland") || part.equalsIgnoreCase("mouth mucosa")
-                || part.equalsIgnoreCase("parotid gland") || part.equalsIgnoreCase("submandibular gland")){
+                || part.equalsIgnoreCase("parotid gland") || part.equalsIgnoreCase("submandibular gland") ){
             exprName = "gastrointestinal system morphology trait";
         }else if(part.equalsIgnoreCase("zone of skin") || part.equalsIgnoreCase("transformed skin fibroblast") || part.equalsIgnoreCase("lower leg skin") || part.equalsIgnoreCase("suprapubic skin")
                 || part.equalsIgnoreCase("hair follicle")){
@@ -693,54 +693,31 @@ public class Manager {
     }
 
     public void updateCounts() throws Exception{
-        List<String> terms = Arrays.asList("UBERON:0002416","UBERON:0007037","UBERON:0002204","UBERON:0001016","UBERON:0001008","UBERON:0000990","UBERON:0001004","UBERON:0001032","UBERON:0002105","UBERON:0002104","UBERON:0000925","UBERON:0000924",
-                "UBERON:0000926","UBERON:0003104","UBERON:0001013","UBERON:0000026","UBERON:0016887","UBERON:6005023","UBERON:0002539");
-
-
+      List<String> terms = Arrays.asList("UBERON:0002416","UBERON:0007037","UBERON:0002204","UBERON:0001016","UBERON:0001008","UBERON:0000990",
+         "UBERON:0001004","UBERON:0001032","UBERON:0002105","UBERON:0002104","UBERON:0000925","UBERON:0000924","UBERON:0000026");
+//"UBERON:0000926","UBERON:0003104","UBERON:0001013"
+        String[] levels = {"high","low","medium","below cutoff"};
+        for(String level:levels){
             for(String term: terms) {
-                HashMap<Integer,Integer> highMap = new HashMap();
-                HashMap<Integer,Integer> lowMap = new HashMap();
-                HashMap<Integer,Integer> mediumMap = new HashMap();
-                HashMap<Integer,Integer> belowMap = new HashMap();
+                long startTime = System.nanoTime();
+                HashMap<Integer, Integer> countMap = new HashMap();
                 int mapKey = 38;
-                List<GeneExpressionRecordValue> values = dao.getGeneExprRecordValuesBySlim("TPM",term,mapKey);
-                System.out.println("Size "+values.size() );
-                for(GeneExpressionRecordValue val:values){
+                List<GeneExpressionRecordValue> values = dao.getGeneExprRecordValuesBySlim("TPM", term, mapKey, level);
+                System.out.println("Size " + values.size());
+                for (GeneExpressionRecordValue val : values) {
                     int count = 0;
-                    System.out.println(val.getId());
-                    if(val.getExpressionLevel().equalsIgnoreCase("high")) {
-                        if(highMap.keySet().contains(val.getExpressedObjectRgdId()))
-                            count = highMap.get(val.getExpressedObjectRgdId());
-                        count++;
-                        highMap.put(val.getExpressedObjectRgdId(),count);
-                    }
-                    if(val.getExpressionLevel().equalsIgnoreCase("low")) {
-                        if(lowMap.keySet().contains(val.getExpressedObjectRgdId()))
-                            count = lowMap.get(val.getExpressedObjectRgdId());
-                        count++;
-                        lowMap.put(val.getExpressedObjectRgdId(),count);
-                    }
-                    if(val.getExpressionLevel().equalsIgnoreCase("medium")) {
-                        if(mediumMap.keySet().contains(val.getExpressedObjectRgdId()))
-                            count = mediumMap.get(val.getExpressedObjectRgdId());
-                        count++;
-                        mediumMap.put(val.getExpressedObjectRgdId(),count);
-                    }
-                    if(val.getExpressionLevel().equalsIgnoreCase("below cutoff")) {
-                        if(belowMap.keySet().contains(val.getExpressedObjectRgdId()))
-                            count = belowMap.get(val.getExpressedObjectRgdId());
-                        count++;
-                        belowMap.put(val.getExpressedObjectRgdId(),count);
-                    }
+                    if (countMap.keySet().contains(val.getExpressedObjectRgdId()))
+                        count = countMap.get(val.getExpressedObjectRgdId());
+                    count++;
+                    countMap.put(val.getExpressedObjectRgdId(), count);
+                }
+
+                System.out.println("Starting insertion for term " + term);
+
+                dao.insertCounts(term, countMap, level);
+                long endTime = System.nanoTime();
+                System.out.println((endTime - startTime)/1000000);
             }
-
-            System.out.println("Starting insertion for term "+term );
-
-            dao.insertCounts(term,highMap,"high");
-            dao.insertCounts(term,lowMap,"low");
-            dao.insertCounts(term,mediumMap,"medium");
-            dao.insertCounts(term,belowMap,"below cutoff");
-
             }
     }
 
