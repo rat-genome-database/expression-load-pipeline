@@ -693,8 +693,7 @@ public class Manager {
     }
 
     public void updateCounts() throws Exception{
-        List<String> terms = Arrays.asList("UBERON:0005409","UBERON:0005726","UBERON:0001009","UBERON:0000949","UBERON:0002330","UBERON:0002193","UBERON:0002423","UBERON:0002416","UBERON:0007037",
-                "UBERON:0002204","UBERON:0001016","UBERON:0001008","UBERON:0000990","UBERON:0001004","UBERON:0001032","UBERON:0002105","UBERON:0002104","UBERON:0000925","UBERON:0000924",
+        List<String> terms = Arrays.asList("UBERON:0002416","UBERON:0007037","UBERON:0002204","UBERON:0001016","UBERON:0001008","UBERON:0000990","UBERON:0001004","UBERON:0001032","UBERON:0002105","UBERON:0002104","UBERON:0000925","UBERON:0000924",
                 "UBERON:0000926","UBERON:0003104","UBERON:0001013","UBERON:0000026","UBERON:0016887","UBERON:6005023","UBERON:0002539");
 
 
@@ -708,6 +707,7 @@ public class Manager {
                 System.out.println("Size "+values.size() );
                 for(GeneExpressionRecordValue val:values){
                     int count = 0;
+                    System.out.println(val.getId());
                     if(val.getExpressionLevel().equalsIgnoreCase("high")) {
                         if(highMap.keySet().contains(val.getExpressedObjectRgdId()))
                             count = highMap.get(val.getExpressedObjectRgdId());
