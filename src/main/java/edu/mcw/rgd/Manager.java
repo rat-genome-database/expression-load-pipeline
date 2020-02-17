@@ -693,10 +693,10 @@ public class Manager {
     }
 
     public void updateCounts() throws Exception{
-      List<String> terms = Arrays.asList("UBERON:0002416","UBERON:0007037","UBERON:0002204","UBERON:0001016","UBERON:0001008","UBERON:0000990",
-         "UBERON:0001004","UBERON:0001032","UBERON:0002105","UBERON:0002104","UBERON:0000925","UBERON:0000924","UBERON:0000026");
-//"UBERON:0000926","UBERON:0003104","UBERON:0001013"
-        String[] levels = {"high","low","medium","below cutoff"};
+      //List<String> terms = Arrays.asList("UBERON:0002416","UBERON:0007037","UBERON:0002204","UBERON:0001016","UBERON:0001008","UBERON:0000990",
+      //   "UBERON:0001004","UBERON:0001032","UBERON:0002105","UBERON:0002104","UBERON:0000925","UBERON:0000924","UBERON:0000026","UBERON:0001013");
+List<String> terms = Arrays.asList("UBERON:0000926","UBERON:0003104");
+        String[] levels = {"low","medium","below cutoff"};
         for(String level:levels){
             for(String term: terms) {
                 long startTime = System.nanoTime();
