@@ -14,8 +14,11 @@ import edu.mcw.rgd.datamodel.pheno.Sample;
 import edu.mcw.rgd.process.Utils;
 import edu.mcw.rgd.process.mapping.MapManager;
 import org.springframework.jdbc.core.SqlParameter;
+import org.springframework.jdbc.object.BatchSqlUpdate;
 
 import java.sql.Types;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 
 
@@ -170,15 +173,45 @@ public class DAO extends AbstractDAO {
             return 0;
         else return genes.get(0).getRgdId();
     }
-
+    public List<Integer> getExistingIds(int studyId) throws Exception{
+        String sql = "select distinct(expressed_object_rgd_id) from gene_expression_values";
+        return IntListQuery.execute(this, sql);
+    }
+    public List<String> getSlims() throws Exception{
+        OntologyXDAO odao = new OntologyXDAO();
+        return odao.getAllSlimTerms("UBERON","AGR");
+    }
     public void updateExpressionLevel() throws Exception{
         String sql = "update gene_expression_values set expression_level= 'below cutoff' where expression_level is null and expression_value < 0.5";
         this.update(sql);
-        sql = "update gene_expression_values set expression_level= 'low' where expression_level is null and expression_value between 0.5 and 10";
+        sql = "update gene_expression_values set expression_level= 'low' where expression_level is null and expression_value between 0.5 and 11";
         this.update(sql);
         sql = "update gene_expression_values set expression_level= 'medium' where expression_level is null and expression_value between 11 and 1000";
         this.update(sql);
         sql = "update gene_expression_values set expression_level= 'high' where expression_level is null and expression_value > 1000";
         this.update(sql);
+
     }
+    public List<GeneExpressionRecordValue> getGeneExprRecordValuesBySlim(String unit,String termAcc,int mapKey,String level) throws Exception {
+        String query = "select ge.* FROM gene_expression_values ge join gene_expression_exp_record gr on ge.gene_expression_exp_record_id = gr.gene_expression_exp_record_id" +
+                " join sample s on s.sample_id = gr.sample_id join ont_terms t on t.term_acc = s.tissue_ont_id where  t.term_acc IN(SELECT child_term_acc FROM ont_dag where ont_rel_id != 'DE' START WITH parent_term_acc=?" +
+                " CONNECT BY PRIOR child_term_acc=parent_term_acc ) AND t.is_obsolete=0 and ge.expression_unit =? and ge.map_Key = ? and ge.expression_level=?";
+
+
+        GeneExpressionRecordValueQuery q = new GeneExpressionRecordValueQuery(getDataSource(), query);
+        return execute(q, termAcc,unit,mapKey,level);
+    }
+
+public void insertCounts(String term, HashMap<Integer,Integer> map, String level) throws Exception{
+    String sql = "insert into gene_expression_value_counts(expressed_object_rgd_id,term_acc,expression_unit,expression_level,value_count)" +
+            "values(?,?,'TPM',?,?)";
+    BatchSqlUpdate su = new BatchSqlUpdate(this.getDataSource(), sql, new int[]{ Types.INTEGER,
+            Types.VARCHAR, Types.VARCHAR,Types.INTEGER, },10000);
+    su.compile();
+    for(int id:map.keySet()){
+        su.update(id,term,level,map.get(id));
+    }
+    su.flush();
+}
+
 }

@@ -1,11 +1,8 @@
 package edu.mcw.rgd;
 
 
-import edu.mcw.rgd.dao.impl.GeneExpressionDAO;
-import edu.mcw.rgd.dao.impl.OntologyXDAO;
-import edu.mcw.rgd.dao.impl.PhenominerDAO;
-import edu.mcw.rgd.dao.impl.XdbIdDAO;
-import edu.mcw.rgd.datamodel.RgdId;
+import edu.mcw.rgd.dao.impl.*;
+import edu.mcw.rgd.datamodel.*;
 import edu.mcw.rgd.datamodel.ontologyx.Term;
 import edu.mcw.rgd.datamodel.pheno.Experiment;
 import edu.mcw.rgd.datamodel.pheno.GeneExpressionRecord;
@@ -20,6 +17,7 @@ import org.springframework.core.io.FileSystemResource;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.util.*;
+import java.util.Map;
 
 public class Manager {
 
@@ -63,6 +61,15 @@ public class Manager {
         Manager manager = (Manager) (bf.getBean("manager"));
 
         try {
+            for( int i=0; i<args.length; i++ ) {
+                switch(args[i]) {
+                    case "--updateCounts": {
+                        String map = args[++i];
+                        manager.updateCounts(Integer.parseInt(map));
+                        return;
+                    }
+                }
+            }
             manager.createSamplesExperimentsGeneExpressionRecord();
         } catch (Exception e) {
             manager.log.error(e);
@@ -177,21 +184,15 @@ public class Manager {
                 String sex = null;
                 int ageHigh = 0;
                 int ageLow = 0;
-             /*   if(!headerVal.contains("Sample Characteristic[sex]") && noOfRuns == 0 ) {
-                    sample.setSex("manual");
-                    sample.setAgeDaysFromHighBound(null);
-                    sample.setAgeDaysFromLowBound(null);
-                }
-                else {
-            */        if (headerIndex.containsKey("Sample Characteristic[sex]")) {
+                  if (headerIndex.containsKey("Sample Characteristic[sex]")) {
                     sex = cols[headerIndex.get("Sample Characteristic[sex]")];
                     if (sex.equalsIgnoreCase("unknown") || sex.equalsIgnoreCase("not available"))
                         sex = "not specified";
                     sample.setSex(sex);
                 }else sample.setSex("not specified");
-                        if (headerIndex.containsKey("Sample Characteristic[age]") || headerIndex.containsKey("Sample Characteristic[developmental stage]")) {
-                            ageHigh = getAgeHigh(cols, headerIndex);
-                            ageLow = getAgeLow(cols, headerIndex);
+                        if ((headerIndex.containsKey("Sample Characteristic[age]") || headerIndex.containsKey("Sample Characteristic[developmental stage]")) &&  firstRun == true) {
+                            ageHigh = (int)getAgeHigh(cols, headerIndex);
+                            ageLow = (int)getAgeLow(cols, headerIndex);
                             if(ageHigh != 0)
                                 sample.setAgeDaysFromHighBound(ageHigh);
                             if(ageLow != 0)
@@ -202,7 +203,7 @@ public class Manager {
                         }
 
 
-            //    }
+
                 //Strian doesnt exist for human it exists for rat
                 if(headerIndex.containsKey("Sample Characteristic[strain]")) {
                     String strain = cols[headerIndex.get("Sample Characteristic[strain]")];
@@ -334,8 +335,8 @@ public class Manager {
         logSummary.info("Samples Inserted : " + samples.size());
         logSummary.info("Gene Expression Records Inserted : " + geneExpressionRecords.size());
        reader.close();
-    loadTPMValues();
-     dao.updateExpressionLevel();
+loadTPMValues();
+   dao.updateExpressionLevel();
     }
 
     public String getNotes(String[] cols, Map<String,Integer> headerIndex){
@@ -368,11 +369,14 @@ public class Manager {
         }
         return notes;
     }
-    public int getAgeHigh(String[] cols, Map<String,Integer> headerIndex) {
+    public double getAgeHigh(String[] cols, Map<String,Integer> headerIndex) {
 
-        int ageHigh = 0;
-        if(headerVal.contains("Sample Characteristic[developmental stage]")) {
-            String developage = cols[headerIndex.get("Sample Characteristic[developmental stage]")];
+        double ageHigh = 0;
+        if(headerVal.contains("Sample Characteristic[developmental stage]") || headerVal.contains("Factor Value[age]")) {
+            String developage;
+            if(headerVal.contains("Sample Characteristic[developmental stage]"))
+                developage  = cols[headerIndex.get("Sample Characteristic[developmental stage]")];
+            else developage = cols[headerIndex.get("Factor Value[age]")];
             if(developage.contains("week post conception")) {
                 ageHigh = Integer.valueOf(developage.split("week")[0].trim());
                 ageHigh = ageHigh * 7;
@@ -410,10 +414,24 @@ public class Manager {
                 if(ageHigh == 13)
                     ageHigh = -248;
                 else {
-                    int diff = ageHigh - 13;
+                    double diff = ageHigh - 13;
                     diff = diff * 3;
                     ageHigh = -248 - diff;
                 }
+            }else if (developage.contains("year")) {
+                String ageSplit = developage.split("year")[0].trim();
+                if (ageSplit.contains("to")) {
+                    String[] ages = ageSplit.split("to");
+                    ageHigh = Integer.valueOf(ages[1].trim());
+                } else ageHigh = Double.valueOf(ageSplit);
+
+                ageHigh = ageHigh * 365;
+            } else if(developage.contains("day")){
+                String ageSplit = developage.split("day")[0].trim();
+                if (ageSplit.contains("to")) {
+                    String[] ages = ageSplit.split("to");
+                    ageHigh = Integer.valueOf(ages[1].trim());
+                } else ageHigh = Integer.valueOf(ageSplit);
             }
             return ageHigh;
         }
@@ -440,7 +458,7 @@ public class Manager {
                 String ageSplit = age.split("year")[0].trim();
                 if (ageSplit.contains("to")) {
                     String[] ages = ageSplit.split("to");
-                    ageHigh = Integer.valueOf(ages[1].trim());
+                    ageHigh =  Double.valueOf(ages[1].trim());
                 } else ageHigh = Integer.valueOf(ageSplit);
 
                 ageHigh = ageHigh * 365;
@@ -448,11 +466,14 @@ public class Manager {
 
         return ageHigh;
     }
-    public int getAgeLow(String[] cols, Map<String,Integer> headerIndex) {
+    public double getAgeLow(String[] cols, Map<String,Integer> headerIndex) {
 
-        int ageLow = 0;
-        if(headerVal.contains("Sample Characteristic[developmental stage]")) {
-            String developage = cols[headerIndex.get("Sample Characteristic[developmental stage]")];
+        double ageLow = 0;
+        if(headerVal.contains("Sample Characteristic[developmental stage]") || headerVal.contains("Factor Value[age]")) {
+            String developage;
+            if(headerVal.contains("Sample Characteristic[developmental stage]"))
+                developage  = cols[headerIndex.get("Sample Characteristic[developmental stage]")];
+            else developage = cols[headerIndex.get("Factor Value[age]")];
             if(developage.contains("week post conception")) {
                 ageLow = Integer.valueOf(developage.split("week")[0].trim());
                 ageLow = ageLow * 7;
@@ -491,10 +512,23 @@ public class Manager {
                 if(ageLow == 13)
                     ageLow = -252;
                 else {
-                    int diff = ageLow - 13;
+                    double diff = ageLow - 13;
                     diff = diff * 3;
                     ageLow = -252 - diff;
                 }
+            } else if (developage.contains("year")) {
+                String ageSplit = developage.split("year")[0].trim();
+                if(ageSplit.contains("to")) {
+                    String[] ages  = ageSplit.split("to");
+                    ageLow = Double.valueOf(ages[0].trim());
+                }else ageLow = Double.valueOf(ageSplit);
+                ageLow = ageLow * 365;
+            } else if(developage.contains("day")){
+                String ageSplit = developage.split("day")[0].trim();
+                if(ageSplit.contains("to")) {
+                    String[] ages  = ageSplit.split("to");
+                    ageLow = Integer.valueOf(ages[0].trim());
+                }else ageLow = Integer.valueOf(ageSplit);
             }
             return ageLow;
         }
@@ -542,7 +576,8 @@ public class Manager {
            || part.equalsIgnoreCase("basal ganglion")  || part.equalsIgnoreCase("choroid plexus")  || part.equalsIgnoreCase("telencephalon") || part.equalsIgnoreCase("pons")
            || part.equalsIgnoreCase("midbrain") || part.equalsIgnoreCase("forebrain fragment") || part.equalsIgnoreCase("diencephalon and midbrain") || part.equalsIgnoreCase("forebrain and midbrain")
            || part.equalsIgnoreCase("hindbrain without cerebellum") || part.equalsIgnoreCase("pituitary and diencephalon") || part.equalsIgnoreCase("brain fragment") || part.equalsIgnoreCase("hindbrain fragment")
-                || part.equalsIgnoreCase("hippocampus"))
+                || part.equalsIgnoreCase("hippocampus") || part.equalsIgnoreCase("corpus callosum") || part.equalsIgnoreCase("brainstem") || part.equalsIgnoreCase("frontal cortex")
+                || part.equalsIgnoreCase("dorsal plus ventral thalamus"))
 
             exprName = "brain molecular composition trait";
         else if(part.equalsIgnoreCase("skeletal muscle tissue") || part.equalsIgnoreCase("smooth muscle tissue") || part.equalsIgnoreCase("diaphragm") || part.equalsIgnoreCase("muscle of arm")
@@ -576,10 +611,10 @@ public class Manager {
         }else if(part.equalsIgnoreCase("vermiform appendix") || part.equalsIgnoreCase("esophagogastric junction") || part.equalsIgnoreCase("large intestine")
                 || part.equalsIgnoreCase("transverse colon") || part.equalsIgnoreCase("esophagus mucosa") || part.equalsIgnoreCase("esophagus muscularis mucosa")
                 || part.equalsIgnoreCase("greater omentum") || part.equalsIgnoreCase("minor salivary gland") || part.equalsIgnoreCase("mouth mucosa")
-                || part.equalsIgnoreCase("parotid gland") || part.equalsIgnoreCase("submandibular gland")){
+                || part.equalsIgnoreCase("parotid gland") || part.equalsIgnoreCase("submandibular gland") ){
             exprName = "gastrointestinal system morphology trait";
         }else if(part.equalsIgnoreCase("zone of skin") || part.equalsIgnoreCase("transformed skin fibroblast") || part.equalsIgnoreCase("lower leg skin") || part.equalsIgnoreCase("suprapubic skin")
-                || part.equalsIgnoreCase("hair follicle")){
+                || part.equalsIgnoreCase("hair follicle") || part.equalsIgnoreCase("fibroblast")){
             exprName = "skin molecular composition trait";
         }else if(part.equalsIgnoreCase("aorta") || part.equalsIgnoreCase("coronary artery") || part.equalsIgnoreCase("tibial artery")){
             exprName = "artery molecular composition trait";
@@ -616,10 +651,12 @@ public class Manager {
             exprName = "cartilage morphology trait";
         }else if(part.equalsIgnoreCase("bone tissue")){
             exprName = "bone morphology trait";
-        }else if(part.equalsIgnoreCase("epithelium of bronchus")){
+        }else if(part.equalsIgnoreCase("epithelium of bronchus") || part.equalsIgnoreCase("alveolus of lung")){
             exprName = "lung molecular composition trait";
         }else if(part.equalsIgnoreCase("mucosa")) {
             exprName = "vertebrate trait";
+        }else if(part.equalsIgnoreCase("omentum")) {
+            exprName = "abdominal wall morphology trait";
         }
 
         String traitId = dao.getTermByTermName(exprName,"VT");
@@ -688,6 +725,35 @@ public class Manager {
 
         return cmoId;
     }
+
+    public void updateCounts(int mapKey) throws Exception{
+
+    List<String> terms = dao.getSlims();
+        List<String> excludedTerms = Arrays.asList("UBERON:0000925","UBERON:0000924","UBERON:0000926","UBERON:0003104");
+        String[] levels = {"high","low","medium","below cutoff"};
+        for(String level:levels){
+            for(String term: terms) {
+                if(!excludedTerms.contains(term)) {
+                    HashMap<Integer, Integer> countMap = new HashMap();
+                    List<GeneExpressionRecordValue> values = dao.getGeneExprRecordValuesBySlim("TPM", term, mapKey, level);
+                    System.out.println(term + "-"+level+": Size " + values.size());
+                    for (GeneExpressionRecordValue val : values) {
+                        int count = 0;
+                        if (countMap.keySet().contains(val.getExpressedObjectRgdId()))
+                            count = countMap.get(val.getExpressedObjectRgdId());
+                        count++;
+                        countMap.put(val.getExpressedObjectRgdId(), count);
+                    }
+
+                    System.out.println("Starting insertion for term " + term);
+
+                    dao.insertCounts(term, countMap, level);
+
+                }
+            }
+        }
+    }
+
 
     public Map getStrainOntIds() {
         return strainOntIds;
