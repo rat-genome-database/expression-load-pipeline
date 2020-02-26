@@ -3,6 +3,7 @@ package edu.mcw.rgd;
 import edu.mcw.rgd.dao.AbstractDAO;
 import edu.mcw.rgd.dao.impl.*;
 import edu.mcw.rgd.dao.spring.*;
+import edu.mcw.rgd.datamodel.Gene;
 import edu.mcw.rgd.datamodel.MappedOrtholog;
 import edu.mcw.rgd.datamodel.RgdId;
 import edu.mcw.rgd.datamodel.ontologyx.Term;
@@ -16,6 +17,7 @@ import org.springframework.jdbc.core.SqlParameter;
 import org.springframework.jdbc.object.BatchSqlUpdate;
 
 import java.sql.Types;
+import java.util.Arrays;
 import java.util.List;
 
 
@@ -154,7 +156,7 @@ public class DAO extends AbstractDAO {
     }
 
     public List<Integer> getExistingIds(int studyId) throws Exception{
-     String sql = "select distinct(expressed_object_rgd_id) from gene_expression_values where gene_expression_exp_record_id between 4305 and 21686";
+     String sql = "select distinct(expressed_object_rgd_id) from gene_expression_values";
         return IntListQuery.execute(this, sql);
     }
     public void insertGeneExpressionRecordValues(List<GeneExpressionRecordValue> records) throws Exception{
@@ -182,20 +184,22 @@ public class DAO extends AbstractDAO {
     }
 
     public int getRGDIdsByXdbId(int xdbKey, String ensembleId) throws Exception{
-        List<RgdId> rgdIds = xdbIdDAO.getRGDIdsByXdbId(xdbKey,ensembleId);
-        if(rgdIds == null || rgdIds.isEmpty())
+        List<Gene> genes = xdbIdDAO.getActiveGenesByXdbId(xdbKey,ensembleId);
+        if(genes == null || genes.isEmpty())
             return 0;
-        else return rgdIds.get(0).getRgdId();
+        else return genes.get(0).getRgdId();
     }
 
     public void updateExpressionLevel() throws Exception{
         String sql = "update gene_expression_values set expression_level= 'below cutoff' where expression_level is null and expression_value < 0.5";
         this.update(sql);
-        sql = "update gene_expression_values set expression_level= 'low' where expression_level is null and expression_value between 0.5 and 10";
+        sql = "update gene_expression_values set expression_level= 'low' where expression_level is null and expression_value between 0.5 and 11";
         this.update(sql);
         sql = "update gene_expression_values set expression_level= 'medium' where expression_level is null and expression_value between 11 and 1000";
         this.update(sql);
         sql = "update gene_expression_values set expression_level= 'high' where expression_level is null and expression_value > 1000";
         this.update(sql);
+
+
     }
 }

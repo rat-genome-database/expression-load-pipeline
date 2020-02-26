@@ -65,6 +65,7 @@ public class Manager {
 
         try {
             manager.createSamplesExperimentsGeneExpressionRecord();
+
         } catch (Exception e) {
             manager.log.error(e);
             throw e;
@@ -78,7 +79,7 @@ public class Manager {
         BufferedReader tpmsReader = new BufferedReader(valReader);
         List<String> samples = new ArrayList<>();
         String tpmsLine = null;
-        loadedRgdIds = dao.getExistingIds(studyId);
+        //loadedRgdIds = dao.getExistingIds(studyId);
 
         while(( tpmsLine = tpmsReader.readLine() ) != null) {
             if (tpmsLine.startsWith("5") || tpmsLine.startsWith("#")) {
@@ -99,11 +100,10 @@ public class Manager {
 
                 if(cols[0].contains(".")) {
                     String[] ids = cols[0].split("\\.");
-                    System.out.println(cols[0]);
                     ensembleID = ids[0];
                 }else ensembleID = cols[0];
                 int rgdId = dao.getRGDIdsByXdbId(20, ensembleID);
-                if (rgdId != 0 && !loadedRgdIds.contains(rgdId)) {
+                if (rgdId != 0 ) {
                     int i = 0;
                     for (String col : cols) {
                         if (!col.isEmpty()) {
@@ -132,7 +132,7 @@ public class Manager {
                         i++;
                     }
 
-                    dao.insertGeneExpressionRecordValues(loaded);
+                   dao.insertGeneExpressionRecordValues(loaded);
                     loaded.clear();
                     logSummary.info("Completed rgdId " + rgdId + " " + cols[1]);
                     System.out.println("Completed rgdId " + rgdId + " " + cols[1]);
