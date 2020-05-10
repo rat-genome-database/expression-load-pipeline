@@ -1,2 +1,5 @@
+May 10, 2020
+  updated jar dependencies
+
 v. 1.0.0, Oct 16, 2019
   -first pipeline version, load phenominer tables with data from expression Atlas
