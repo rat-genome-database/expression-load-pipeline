@@ -1,15 +1,13 @@
 package edu.mcw.rgd;
 
 
-import edu.mcw.rgd.dao.impl.*;
-import edu.mcw.rgd.datamodel.*;
-import edu.mcw.rgd.datamodel.ontologyx.Term;
 import edu.mcw.rgd.datamodel.pheno.Experiment;
 import edu.mcw.rgd.datamodel.pheno.GeneExpressionRecord;
 import edu.mcw.rgd.datamodel.pheno.GeneExpressionRecordValue;
 import edu.mcw.rgd.datamodel.pheno.Sample;
 import edu.mcw.rgd.process.mapping.MapManager;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.beans.factory.xml.XmlBeanDefinitionReader;
 import org.springframework.core.io.FileSystemResource;
@@ -21,7 +19,6 @@ import java.util.Map;
 
 public class Manager {
 
-    private List<String> exprDesignFiles;
     private List<Sample> samples = new ArrayList<>();
     private Set<Experiment> experiments = new TreeSet<Experiment>(new Comparator() {
         @Override
@@ -50,9 +47,7 @@ public class Manager {
 
 
 
-    Logger log = Logger.getLogger("core");
-
-    Logger logSummary = Logger.getLogger("status");
+    Logger log = LogManager.getLogger("status");
 
     public static void main(String[] args) throws Exception {
 
@@ -147,16 +142,15 @@ public class Manager {
                         i++;
                     }
                         data.put(rgdId, sampleData);
-                    logSummary.info("Completed rgdId " + rgdId + " " + cols[1]);
+                        log.info("Completed rgdId " + rgdId + " " + cols[1]);
                     }else{
                         count++;
-
                     }
             }
         }
-        logSummary.info("Total Samples in Data Inserted : " + sampleData.size());
-        logSummary.info("Total Genes in Data Inserted : " + data.size());
-        logSummary.info("Total genes not found : " + count);
+        log.info("Total Samples in Data Inserted : " + sampleData.size());
+        log.info("Total Genes in Data Inserted : " + data.size());
+        log.info("Total genes not found : " + count);
         tpmsReader.close();
     }
     public void createSamplesExperimentsGeneExpressionRecord() throws Exception{
@@ -331,12 +325,12 @@ public class Manager {
 
         }
 
-        logSummary.info("Experiments Inserted : " + experiments.size());
-        logSummary.info("Samples Inserted : " + samples.size());
-        logSummary.info("Gene Expression Records Inserted : " + geneExpressionRecords.size());
-       reader.close();
-loadTPMValues();
-   dao.updateExpressionLevel();
+        log.info("Experiments Inserted : " + experiments.size());
+        log.info("Samples Inserted : " + samples.size());
+        log.info("Gene Expression Records Inserted : " + geneExpressionRecords.size());
+        reader.close();
+        loadTPMValues();
+        dao.updateExpressionLevel();
     }
 
     public String getNotes(String[] cols, Map<String,Integer> headerIndex){

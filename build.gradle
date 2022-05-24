@@ -15,21 +15,23 @@ targetCompatibility = 1.8
 mainClassName = 'edu.mcw.rgd.Manager'
 String myAppName = 'expressionLoadPipeline'
 
+project.archivesBaseName = myAppName
+
 repositories {
     mavenCentral()
 }
 
 dependencies {
     compile 'commons-dbcp:commons-dbcp:1.4'
-    compile 'log4j:log4j:1.2.17'
-    compile 'org.springframework:spring-beans:5.1.5.RELEASE'
-    compile 'org.springframework:spring-jdbc:5.1.5.RELEASE'
+    compile 'org.apache.logging.log4j:log4j-api:2.17.2'
+    compile 'org.apache.logging.log4j:log4j-core:2.17.2'
+    compile 'org.springframework:spring-beans:5.1.6.RELEASE'
+    compile 'org.springframework:spring-jdbc:5.1.6.RELEASE'
 
     compile fileTree(dir: 'lib', include: '*.jar')
 }
 
 jar {
-    baseName = myAppName
     manifest {
         attributes(
             'Built-By': System.getProperty('user.name'),

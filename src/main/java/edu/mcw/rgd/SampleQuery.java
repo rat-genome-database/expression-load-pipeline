@@ -1,7 +1,6 @@
 package edu.mcw.rgd;
 
 import edu.mcw.rgd.datamodel.pheno.Sample;
-import edu.mcw.rgd.datamodel.pheno.Study;
 import org.springframework.jdbc.object.MappingSqlQuery;
 
 import javax.sql.DataSource;
@@ -26,9 +25,14 @@ public class SampleQuery extends MappingSqlQuery {
         sample.setStrainAccId(rs.getString("strain_ont_id"));
         sample.setTissueAccId(rs.getString("tissue_ont_id"));
         sample.setCellTypeAccId(rs.getString("cell_type_ont_id"));
-        sample.setSubcellComponentAccId(rs.getString("subcell_component_ont_id"));
         sample.setGeoSampleAcc(rs.getString("geo_sample_acc"));
         sample.setBioSampleId(rs.getString("biosample_id"));
+
+        if( true ) {
+            throw new SQLException("TODO: column 'subcell_component_ont_id' has  to be implemented in Sample object");
+            //sample.setSubcellComponentAccId(rs.getString("subcell_component_ont_id"));
+        }
+
         return sample;
     }
 
