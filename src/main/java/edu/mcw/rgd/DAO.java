@@ -3,21 +3,15 @@ package edu.mcw.rgd;
 import edu.mcw.rgd.dao.AbstractDAO;
 import edu.mcw.rgd.dao.impl.*;
 import edu.mcw.rgd.dao.spring.*;
-import edu.mcw.rgd.datamodel.MappedOrtholog;
-import edu.mcw.rgd.datamodel.RgdId;
 import edu.mcw.rgd.datamodel.Gene;
 import edu.mcw.rgd.datamodel.ontologyx.Term;
 import edu.mcw.rgd.datamodel.pheno.Experiment;
 import edu.mcw.rgd.datamodel.pheno.GeneExpressionRecord;
 import edu.mcw.rgd.datamodel.pheno.GeneExpressionRecordValue;
 import edu.mcw.rgd.datamodel.pheno.Sample;
-import edu.mcw.rgd.process.Utils;
-import edu.mcw.rgd.process.mapping.MapManager;
-import org.springframework.jdbc.core.SqlParameter;
 import org.springframework.jdbc.object.BatchSqlUpdate;
 
 import java.sql.Types;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
