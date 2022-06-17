@@ -31,5 +31,10 @@
         <property name="mapKey" value="38"></property>
         <property name="expressionUnit" value="TPM"></property>
     </bean>
+
     <bean id="dao" class="edu.mcw.rgd.DAO"></bean>
+
+    <bean id="tpmManager" class="edu.mcw.rgd.TpmManager">
+    </bean>
+
 </beans>

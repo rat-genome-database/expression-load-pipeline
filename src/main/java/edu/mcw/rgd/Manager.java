@@ -5,6 +5,7 @@ import edu.mcw.rgd.datamodel.pheno.Experiment;
 import edu.mcw.rgd.datamodel.pheno.GeneExpressionRecord;
 import edu.mcw.rgd.datamodel.pheno.GeneExpressionRecordValue;
 import edu.mcw.rgd.datamodel.pheno.Sample;
+import edu.mcw.rgd.process.Utils;
 import edu.mcw.rgd.process.mapping.MapManager;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -47,7 +48,7 @@ public class Manager {
 
 
 
-    Logger log = LogManager.getLogger("status");
+    static Logger log = LogManager.getLogger("status");
 
     public static void main(String[] args) throws Exception {
 
@@ -63,11 +64,16 @@ public class Manager {
                         manager.updateCounts(Integer.parseInt(map));
                         return;
                     }
+                    case "--updateTpmValues": {
+                        TpmManager tpmManager = (TpmManager) bf.getBean("tpmManager");
+                        tpmManager.run();
+                        return;
+                    }
                 }
             }
             manager.createSamplesExperimentsGeneExpressionRecord();
         } catch (Exception e) {
-            manager.log.error(e);
+            Utils.printStackTrace(e, log);
             throw e;
         }
     }

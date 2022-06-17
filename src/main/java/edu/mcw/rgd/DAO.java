@@ -22,16 +22,13 @@ import java.util.List;
  */
 public class DAO extends AbstractDAO {
 
-
-
     OntologyXDAO odao = new OntologyXDAO();
-    PhenominerDAO phenominerDAO = new PhenominerDAO();
     GeneExpressionDAO gedao = new GeneExpressionDAO();
     XdbIdDAO xdbIdDAO = new XdbIdDAO();
 
 
     public String getConnectionInfo() {
-        return phenominerDAO.getConnectionInfo();
+        return odao.getConnectionInfo();
     }
 
 
@@ -138,12 +135,13 @@ public class DAO extends AbstractDAO {
             return 0;
         else return records.get(0).getId();
     }
+
     public int insertSample(Sample sample) throws Exception{
-        return phenominerDAO.insertSample(sample);
+        return gedao.insertSample(sample);
     }
 
     public int insertExperiment(Experiment e) throws Exception{
-        return phenominerDAO.insertExperiment(e);
+        return gedao.insertExperiment(e);
     }
 
     public int insertGeneExpressionRecord(GeneExpressionRecord g) throws Exception {
@@ -167,10 +165,7 @@ public class DAO extends AbstractDAO {
             return 0;
         else return genes.get(0).getRgdId();
     }
-    public List<Integer> getExistingIds(int studyId) throws Exception{
-        String sql = "select distinct(expressed_object_rgd_id) from gene_expression_values";
-        return IntListQuery.execute(this, sql);
-    }
+
     public List<String> getSlims() throws Exception{
         OntologyXDAO odao = new OntologyXDAO();
         return odao.getAllSlimTerms("UBERON","AGR");
@@ -196,16 +191,35 @@ public class DAO extends AbstractDAO {
         return execute(q, termAcc,unit,mapKey,level);
     }
 
-public void insertCounts(String term, HashMap<Integer,Integer> map, String level) throws Exception{
-    String sql = "insert into gene_expression_value_counts(expressed_object_rgd_id,term_acc,expression_unit,expression_level,value_count)" +
-            "values(?,?,'TPM',?,?)";
-    BatchSqlUpdate su = new BatchSqlUpdate(this.getDataSource(), sql, new int[]{ Types.INTEGER,
-            Types.VARCHAR, Types.VARCHAR,Types.INTEGER, },10000);
-    su.compile();
-    for(int id:map.keySet()){
-        su.update(id,term,level,map.get(id));
+    public void insertCounts(String term, HashMap<Integer,Integer> map, String level) throws Exception{
+        String sql = "insert into gene_expression_value_counts(expressed_object_rgd_id,term_acc,expression_unit,expression_level,value_count)" +
+                "values(?,?,'TPM',?,?)";
+        BatchSqlUpdate su = new BatchSqlUpdate(this.getDataSource(), sql, new int[]{ Types.INTEGER,
+                Types.VARCHAR, Types.VARCHAR,Types.INTEGER, },10000);
+        su.compile();
+        for(int id:map.keySet()){
+            su.update(id,term,level,map.get(id));
+        }
+        su.flush();
     }
-    su.flush();
-}
 
+    public List<Integer> getExpRecIdsWithValues() throws Exception {
+        String sql = "SELECT DISTINCT gene_expression_exp_record_id FROM gene_expression_values";
+        return IntListQuery.execute(this, sql);
+    }
+
+    public List<GeneExpressionRecordValue> getGeneExpressionRecordValues(int geneExpressionRecordId) throws Exception {
+        return gedao.getGeneExpressionRecordValues(geneExpressionRecordId);
+    }
+
+    public void updateTpmValues(List<GeneExpressionRecordValue> values) throws Exception {
+
+        String sql = "UPDATE gene_expression_values SET tpm_value=? WHERE gene_expression_value_id=?";
+        BatchSqlUpdate su = new BatchSqlUpdate(this.getDataSource(), sql, new int[]{ Types.DOUBLE, Types.INTEGER }, 10000);
+        su.compile();
+        for( GeneExpressionRecordValue v: values ) {
+            su.update(v.getTpmValue(), v.getId());
+        }
+        su.flush();
+    }
 }
