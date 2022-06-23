@@ -26,6 +26,8 @@ public class TpmManager {
         AtomicInteger i = new AtomicInteger(0);
         expRecIds.parallelStream().forEach( expRecId -> {
 
+            //if( expRecId!=3811 ) return;
+
             try {
                 int ii = i.incrementAndGet();
                 log.info(ii + "/" + expRecCount + ". processing EXP REC ID: " + expRecId);
@@ -67,8 +69,8 @@ public class TpmManager {
             sum += v.getExpressionValue();
         }
         if( nullValueCount==0 ) {
-            log.info(prefix+"  "+exprUnit+" value count: "+values.size()+"    ALREADY PROCESSED!");
-            return;
+            //log.info(prefix+"  "+exprUnit+" value count: "+values.size()+"    ALREADY PROCESSED!");
+            //return;
         }
         log.info(prefix+"  "+exprUnit+" value count: "+values.size());
 
@@ -78,11 +80,13 @@ public class TpmManager {
                 v.setTpmValue(v.getExpressionValue());
             }
             dao.updateTpmValues(values);
-        } else if( exprUnit.equals("FPKM") ) {
+        } else if( exprUnit.equals("FPKM") || exprUnit.equals("TPKM") ) {
 
             double multiplier = 1000000 / sum;
             for (GeneExpressionRecordValue v : values) {
-                v.setTpmValue(v.getExpressionValue() * multiplier);
+                // round to 1 decimal place
+                double dTpmValue =  Math.round(v.getExpressionValue() * multiplier * 10) / 10.0;
+                v.setTpmValue(dTpmValue);
             }
             dao.updateTpmValues(values);
         } else {
