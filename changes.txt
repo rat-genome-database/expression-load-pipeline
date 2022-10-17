@@ -1,3 +1,6 @@
+October 17, 2022
+  added module to update life stage based on species
+
 Jun 23, 2022
   added a module to compute TPM values from FPKM
 
