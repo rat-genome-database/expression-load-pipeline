@@ -15,4 +15,4 @@ java -Dspring.config=$APPDIR/../properties/default_db.xml \
     -Dlog4j.configurationFile=file://$APPDIR/properties/log4j2.xml \
     -jar lib/${APPNAME}.jar --updateLifeStage "$@" | tee $APPDIR/run.log 2>&1
 
-mailx -s "[$SERVER] Life Stage update complete!" $EMAILLIST < $APPDIR/logs/lifeStageStatus.log
+mailx -s "[$SERVER] Life Stage update complete!" $EMAILLIST < $APPDIR/logs/lsStatus.log
