@@ -1,8 +1,8 @@
 <!DOCTYPE beans PUBLIC "-//SPRING//DTD BEAN//EN" "http://www.springframework.org/dtd/spring-beans.dtd">
 <beans>
     <bean id="manager" class="edu.mcw.rgd.Manager">
-        <property name="tpmFile" value="data/human/E-MTAB-513/tpms.tsv"></property>
-        <property name="designFile" value="data/human/E-MTAB-513/experiment-design"></property>
+        <property name="tpmFile" value="data/E-GEOD-53960/tpms.tsv"></property>
+        <property name="designFile" value="data/E-GEOD-53960/experiment-design"></property>
         <property name="strainOntIds">
             <map>
                 <entry key="Holtzman SD" value="RS:0002942"></entry>
@@ -28,7 +28,7 @@
                 <value>Sample Characteristic[organism part]</value>
             </list>
         </property>
-        <property name="mapKey" value="38"></property>
+        <property name="mapKey" value="360"></property>
         <property name="expressionUnit" value="TPM"></property>
     </bean>
 
@@ -37,4 +37,7 @@
     <bean id="tpmManager" class="edu.mcw.rgd.TpmManager">
     </bean>
 
+    <bean id="updateLifeStage" class="edu.mcw.rgd.UpdateLifeStage">
+        <property name="species" value="3"></property>
+    </bean>
 </beans>

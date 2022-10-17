@@ -89,6 +89,15 @@ public class DAO extends AbstractDAO {
             return null;
         else return samples.get(0);
     }
+
+    public List<Sample> getSamplesBySpecies(int speciesType) throws Exception {
+        String sql =  "select s.* from sample s where s.sample_id in (select distinct(r.sample_id) from experiment_record r where r.species_type_key=?)";
+//        SampleQuery sq = new SampleQuery(this.getDataSource(), sql);
+        List<Sample> samples = SampleQuery.execute2(this.getDataSource(),sql,speciesType);
+        if (samples.isEmpty())
+            return null;
+        else return samples;
+    }
     public void updateBioSampleId(int sampleId,Sample sample) throws Exception{
 
         Sample s = getSample(sample);
@@ -134,6 +143,10 @@ public class DAO extends AbstractDAO {
         if(records == null || records.isEmpty())
             return 0;
         else return records.get(0).getId();
+    }
+
+    public void updateLifeStageBatch(List<Sample> samples) throws Exception{
+        gedao.updateSampleLifeStageBatch(samples);
     }
 
     public int insertSample(Sample sample) throws Exception{

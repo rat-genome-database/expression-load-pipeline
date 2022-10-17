@@ -1,11 +1,13 @@
 package edu.mcw.rgd;
 
+import edu.mcw.rgd.dao.AbstractDAO;
 import edu.mcw.rgd.datamodel.pheno.Sample;
 import org.springframework.jdbc.object.MappingSqlQuery;
 
 import javax.sql.DataSource;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.List;
 
 public class SampleQuery extends MappingSqlQuery {
 
@@ -27,13 +29,18 @@ public class SampleQuery extends MappingSqlQuery {
         sample.setCellTypeAccId(rs.getString("cell_type_ont_id"));
         sample.setGeoSampleAcc(rs.getString("geo_sample_acc"));
         sample.setBioSampleId(rs.getString("biosample_id"));
+        sample.setLifeStage(rs.getString("life_stage"));
 
-        if( true ) {
-            throw new SQLException("TODO: column 'subcell_component_ont_id' has  to be implemented in Sample object");
-            //sample.setSubcellComponentAccId(rs.getString("subcell_component_ont_id"));
-        }
+//        if( true ) {
+//            throw new SQLException("TODO: column 'subcell_component_ont_id' has  to be implemented in Sample object");
+//            //sample.setSubcellComponentAccId(rs.getString("subcell_component_ont_id"));
+//        }
 
         return sample;
     }
-
+    public static List<Sample> execute2(DataSource source, String sql, Object... params) throws Exception {
+        AbstractDAO dao = new AbstractDAO();
+        SampleQuery q = new SampleQuery(source, sql);
+        return dao.execute(q, params);
+    }
 }

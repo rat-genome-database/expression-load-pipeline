@@ -69,6 +69,11 @@ public class Manager {
                         tpmManager.run();
                         return;
                     }
+                    case "--updateLifeStage":{
+                        UpdateLifeStage updateLifeStage = (UpdateLifeStage) bf.getBean("updateLifeStage");
+                        updateLifeStage.run();
+                        return;
+                    }
                 }
             }
             manager.createSamplesExperimentsGeneExpressionRecord();

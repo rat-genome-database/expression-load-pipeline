@@ -22,6 +22,23 @@
                 <TimeBasedTriggeringPolicy interval="1"/>
             </Policies>
         </RollingFile>
+
+        <RollingFile name="lsStatus" append="true" fileName="logs/lsStatus.log" filePattern="logs/lsStatus.log.%d{yyyy-MM}">
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss} %p [%c] - %m%n"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1"/>
+            </Policies>
+        </RollingFile>
+        <File name="lsSummary" append="false" fileName="logs/lsSummary.log">
+            <PatternLayout pattern="%m%n"/>
+            <ThresholdFilter level="INFO" onMatch="ACCEPT" onMismatch="DENY"/>
+        </File>
+        <RollingFile name="lsDetail" append="true" fileName="logs/lsDetail.log" filePattern="logs/lsDetail.log.%d{yyyy-MM}">
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss} %p [%c] - %m%n"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1"/>
+            </Policies>
+        </RollingFile>
     </Appenders>
 
     <Loggers>
@@ -33,6 +50,13 @@
             <AppenderRef ref="status" level="info"/>
             <AppenderRef ref="summary" level="info"/><!-- human readable -->
             <AppenderRef ref="detail"/>
+            <AppenderRef ref="Console" level="info"/>
+        </Logger>
+
+        <Logger name="lsStatus" level="debug" additivity="false">
+            <AppenderRef ref="lsStatus" level="info"/>
+            <AppenderRef ref="lsSummary" level="info"/><!-- human readable -->
+            <AppenderRef ref="lsDetail"/>
             <AppenderRef ref="Console" level="info"/>
         </Logger>
     </Loggers>
