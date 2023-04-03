@@ -1,3 +1,6 @@
+Apr 03, 2023
+  upgraded build.gradle to be compatible with newer gradle versions
+
 October 17, 2022
   added module to update life stage based on species
 
