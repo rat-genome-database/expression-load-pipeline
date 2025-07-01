@@ -19,8 +19,8 @@ public class SampleQuery extends MappingSqlQuery {
 
         Sample sample = new Sample();
         sample.setId(rs.getInt("sample_id"));
-        sample.setAgeDaysFromHighBound(rs.getInt("age_days_from_dob_high_bound"));
-        sample.setAgeDaysFromLowBound(rs.getInt("age_days_from_dob_low_bound"));
+        sample.setAgeDaysFromHighBound(rs.getDouble("age_days_from_dob_high_bound"));
+        sample.setAgeDaysFromLowBound(rs.getDouble("age_days_from_dob_low_bound"));
         sample.setNumberOfAnimals(rs.getInt("number_of_animals"));
         sample.setNotes(rs.getString("sample_notes"));
         sample.setSex(rs.getString("sex"));
