@@ -187,8 +187,8 @@ public class Manager {
                 Experiment experiment = new Experiment();
                 GeneExpressionRecord geneExpressionRecord = new GeneExpressionRecord();
                 String sex = null;
-                int ageHigh = 0;
-                int ageLow = 0;
+                double ageHigh = 0;
+                double ageLow = 0;
                   if (headerIndex.containsKey("Sample Characteristic[sex]")) {
                     sex = cols[headerIndex.get("Sample Characteristic[sex]")];
                     if (sex.equalsIgnoreCase("unknown") || sex.equalsIgnoreCase("not available"))
@@ -196,8 +196,8 @@ public class Manager {
                     sample.setSex(sex);
                 }else sample.setSex("not specified");
                         if ((headerIndex.containsKey("Sample Characteristic[age]") || headerIndex.containsKey("Sample Characteristic[developmental stage]")) &&  firstRun == true) {
-                            ageHigh = (int)getAgeHigh(cols, headerIndex);
-                            ageLow = (int)getAgeLow(cols, headerIndex);
+                            ageHigh = getAgeHigh(cols, headerIndex);
+                            ageLow = getAgeLow(cols, headerIndex);
                             if(ageHigh != 0)
                                 sample.setAgeDaysFromHighBound(ageHigh);
                             if(ageLow != 0)

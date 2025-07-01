@@ -9,9 +9,10 @@ tasks.whenTaskAdded { task ->
 apply plugin: 'java'
 apply plugin: 'application'
 
-// JDK 8
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
 mainClassName = 'edu.mcw.rgd.Manager'
 String myAppName = 'expressionLoadPipeline'
 
