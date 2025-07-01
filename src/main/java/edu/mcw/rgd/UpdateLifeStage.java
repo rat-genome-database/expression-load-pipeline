@@ -46,7 +46,7 @@ static Logger log = LogManager.getLogger("lsStatus");
         }
     }
 
-    String calcLifeStage(int ageLow, int ageHigh) throws Exception{
+    String calcLifeStage(double ageLow, double ageHigh) throws Exception{
         /* for Rat
         * embryonic = <0 days (embryonic samples are entered with the "AGE_DAYS_FROM_DOB_LOW (or HIGH)_BOUND" as a negative number)
         * neonatal = 0 – 20 days
